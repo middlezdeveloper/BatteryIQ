@@ -1,0 +1,416 @@
+// BatteryIQ Database Schema
+// Comprehensive solar & battery configurator with SEO optimization
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Users and Sessions
+model User {
+  id                    String               @id @default(cuid())
+  email                 String?              @unique
+  locationId            String?
+  calculationHistory    Calculation[]
+  projects              Project[]
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  location             Location?            @relation(fields: [locationId], references: [id])
+
+  @@map("users")
+}
+
+// Location data with solar zones and grid regions
+model Location {
+  id                   String               @id @default(cuid())
+  postcode            String               @unique
+  suburb              String
+  state               String
+  latitude            Float
+  longitude           Float
+  solarZone           Int                  // 1-7 zones for STC calculations
+  gridRegion          String               // NEM regions: NSW1, VIC1, etc.
+  dmoPricing          Json?                // Default Market Offer pricing
+  seoData             SEOData[]
+  users               User[]
+  projects            Project[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([postcode])
+  @@index([state])
+  @@index([solarZone])
+  @@map("locations")
+}
+
+// Federal and state rebate programs
+model Rebate {
+  id                  String               @id @default(cuid())
+  name                String
+  type                RebateType
+  state               String?              // null for federal rebates
+  amount              Float                // $ per kWh or flat amount
+  maxCapacity         Float                // Maximum kWh eligible
+  maxAmount           Float?               // Maximum $ rebate
+  startDate           DateTime
+  endDate             DateTime?
+  isActive            Boolean              @default(true)
+  requirements        String[]             // Array of requirements
+  vppRequired         Boolean              @default(false)
+  vppCapableRequired  Boolean              @default(false)
+  declineRate         Float?               // Annual decline percentage
+  budgetLimit         Float?               // Total program budget
+  budgetUsed          Float?               // Amount already allocated
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([type, state])
+  @@index([isActive])
+  @@map("rebates")
+}
+
+// Energy retailers and plans
+model EnergyPlan {
+  id                  String               @id @default(cuid())
+  retailerId          String
+  retailerName        String
+  planName            String
+  state               String
+  tariffType          TariffType
+  peakRate            Float                // c/kWh
+  offPeakRate         Float?               // c/kWh
+  shoulderRate        Float?               // c/kWh
+  demandRate          Float?               // $/kW/day
+  dailySupplyCharge   Float                // $/day
+  feedInTariff        Float                // c/kWh
+  greenPower          Boolean              @default(false)
+  carbonNeutral       Boolean              @default(false)
+  isActive            Boolean              @default(true)
+  projects            Project[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([state, isActive])
+  @@index([retailerId])
+  @@map("energy_plans")
+}
+
+// Battery hardware specifications
+model Battery {
+  id                  String               @id @default(cuid())
+  brand               String
+  model               String
+  nominalCapacity     Float                // Total kWh
+  usableCapacity      Float                // Usable kWh for rebate calculations
+  powerRating         Float                // kW continuous
+  maxPowerRating      Float?               // kW peak
+  efficiency          Float                // Round-trip efficiency %
+  warrantyYears       Int
+  warrantyThroughput  Float?               // Total kWh warranty
+  isVppCapable        Boolean              @default(false)
+  price               Float                // RRP in AUD
+  installationCost    Float?               // Typical installation cost
+  maintenance         Float?               // Annual maintenance cost
+  chemistry           BatteryChemistry
+  cycles              Int?                 // Rated cycle life
+  degradation         Float?               // % per year
+  isActive            Boolean              @default(true)
+  projects            Project[]
+  calculations        Calculation[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([brand, isActive])
+  @@index([isVppCapable])
+  @@map("batteries")
+}
+
+// Solar inverter specifications
+model Inverter {
+  id                  String               @id @default(cuid())
+  brand               String
+  model               String
+  powerRating         Float                // kW AC output
+  maxDcInput          Float                // kW DC input
+  efficiency          Float                // % at rated power
+  phases              Int                  // 1 or 3 phase
+  price               Float
+  warrantyYears       Int
+  isActive            Boolean              @default(true)
+  projects            Project[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([brand, isActive])
+  @@map("inverters")
+}
+
+// Solar panel specifications
+model SolarPanel {
+  id                  String               @id @default(cuid())
+  brand               String
+  model               String
+  powerRating         Float                // Watts per panel
+  efficiency          Float                // % efficiency
+  technology          PanelTechnology
+  dimensions          Json                 // {width, height, depth} in mm
+  price               Float                // Per panel
+  warrantyYears       Int
+  degradation         Float                // % per year
+  isActive            Boolean              @default(true)
+  projects            Project[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([brand, isActive])
+  @@map("solar_panels")
+}
+
+// User projects and configurations
+model Project {
+  id                  String               @id @default(cuid())
+  userId              String?
+  name                String
+  locationId          String
+  energyPlanId        String?
+  batteryId           String?
+  inverterId          String?
+  solarPanelId        String?
+
+  // System configuration
+  batteryCapacity     Float?               // Selected battery size
+  solarCapacity       Float?               // kW of solar
+  numberOfPanels      Int?
+  hasExistingSolar    Boolean              @default(false)
+  existingSolarSize   Float?
+
+  // Usage patterns
+  dailyUsage          Float                // kWh per day
+  peakUsage           Float?               // kW peak demand
+  usagePattern        Json?                // Hourly usage profile
+  essentialLoads      Float?               // kW of essential loads for backup
+
+  // Optimization preferences
+  costWeight          Float                @default(0.33)
+  emissionsWeight     Float                @default(0.33)
+  backupWeight        Float                @default(0.34)
+
+  // Results cache
+  lastCalculation     Json?                // Cached calculation results
+
+  calculations        Calculation[]
+  isActive            Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  user                User?                @relation(fields: [userId], references: [id])
+  location            Location             @relation(fields: [locationId], references: [id])
+  energyPlan          EnergyPlan?          @relation(fields: [energyPlanId], references: [id])
+  battery             Battery?             @relation(fields: [batteryId], references: [id])
+  inverter            Inverter?            @relation(fields: [inverterId], references: [id])
+  solarPanel          SolarPanel?          @relation(fields: [solarPanelId], references: [id])
+
+  @@index([userId])
+  @@index([locationId])
+  @@map("projects")
+}
+
+// Calculation results and scenarios
+model Calculation {
+  id                  String               @id @default(cuid())
+  projectId           String
+  userId              String?
+  batteryId           String?
+
+  // Input parameters
+  batterySize         Float                // kWh
+  solarSize           Float?               // kW
+  scenario            String               // 'solar+battery', 'battery-only', etc.
+
+  // Financial results
+  totalCost           Float
+  federalRebate       Float
+  stateRebate         Float
+  totalRebates        Float
+  netCost             Float
+  annualSavings       Float
+  paybackYears        Float
+  roi                 Float                // %
+  npv                 Float                // 20-year NPV
+  irr                 Float                // Internal rate of return
+
+  // Performance results
+  selfConsumption     Float                // %
+  exportReduction     Float                // kWh/year
+  gridImportReduction Float                // kWh/year
+  backupHours         Float                // Hours of backup power
+
+  // Environmental results
+  co2Reduction        Float                // kg CO2 per year
+  co2Lifetime         Float                // kg CO2 lifetime reduction
+
+  // Grid optimization
+  peakShaving         Float                // kW peak reduction
+  arbitrageSavings    Float                // Annual arbitrage savings
+
+  optimizationStrategy String              // 'cost', 'emissions', 'backup', 'hybrid'
+  calculatedAt        DateTime             @default(now())
+
+  project             Project              @relation(fields: [projectId], references: [id])
+  user                User?                @relation(fields: [userId], references: [id])
+  battery             Battery?             @relation(fields: [batteryId], references: [id])
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([calculatedAt])
+  @@map("calculations")
+}
+
+// Grid data and real-time pricing
+model GridData {
+  id                  String               @id @default(cuid())
+  region              String               // NEM region
+  timestamp           DateTime
+  price               Float                // $/MWh
+  demand              Float                // MW
+  renewableShare      Float                // %
+  carbonIntensity     Float                // kg CO2/MWh
+
+  @@unique([region, timestamp])
+  @@index([region, timestamp])
+  @@map("grid_data")
+}
+
+// SEO data for dynamic pages
+model SEOData {
+  id                  String               @id @default(cuid())
+  page                String               // Page identifier
+  path                String               // URL path
+  title               String
+  description         String
+  canonicalUrl        String?
+  keywords            String[]
+  schemaMarkup        Json?                // JSON-LD structured data
+  locationId          String?
+  isActive            Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  location            Location?            @relation(fields: [locationId], references: [id])
+
+  @@unique([page, path])
+  @@index([page])
+  @@index([locationId])
+  @@map("seo_data")
+}
+
+// Content management for blog and guides
+model Content {
+  id                  String               @id @default(cuid())
+  title               String
+  slug                String               @unique
+  excerpt             String?
+  content             String               // Markdown content
+  contentType         ContentType
+  category            String?
+  tags                String[]
+  isPublished         Boolean              @default(false)
+  publishedAt         DateTime?
+  seoTitle            String?
+  seoDescription      String?
+  schemaMarkup        Json?
+  views               Int                  @default(0)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([contentType, isPublished])
+  @@index([category])
+  @@map("content")
+}
+
+// Installer network and partnerships
+model Installer {
+  id                  String               @id @default(cuid())
+  name                String
+  businessName        String
+  abn                 String?
+  cleanEnergyCouncilId String?
+  phone               String
+  email               String
+  website             String?
+
+  // Location and service areas
+  address             Json                 // Address object
+  servicePostcodes    String[]             // Array of postcodes served
+  serviceRadius       Int?                 // km radius
+
+  // Certifications and ratings
+  isVerified          Boolean              @default(false)
+  cetcAccredited      Boolean              @default(false) // Clean Energy Council
+  gridConnectApproved Boolean              @default(false)
+  insuranceValid      Boolean              @default(false)
+
+  // Performance metrics
+  rating              Float?               // Average rating
+  reviewCount         Int                  @default(0)
+  projectsCompleted   Int                  @default(0)
+
+  // Business details
+  yearsExperience     Int?
+  teamSize            Int?
+  specializesIn       String[]             // 'residential', 'commercial', 'battery', 'solar'
+
+  isActive            Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([servicePostcodes])
+  @@index([isVerified, isActive])
+  @@map("installers")
+}
+
+// Enums
+enum RebateType {
+  FEDERAL
+  STATE
+  UTILITY
+  LOCAL
+}
+
+enum TariffType {
+  FLAT
+  TIME_OF_USE
+  DEMAND
+  BLOCK
+}
+
+enum BatteryChemistry {
+  LITHIUM_ION
+  LITHIUM_PHOSPHATE
+  LEAD_ACID
+  FLOW_BATTERY
+  OTHER
+}
+
+enum PanelTechnology {
+  MONOCRYSTALLINE
+  POLYCRYSTALLINE
+  THIN_FILM
+  BIFACIAL
+  OTHER
+}
+
+enum ContentType {
+  BLOG
+  GUIDE
+  FAQ
+  CASE_STUDY
+  NEWS
+  LANDING_PAGE
+}
