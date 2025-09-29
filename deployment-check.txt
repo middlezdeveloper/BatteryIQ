@@ -1,0 +1,22 @@
+Deployment Check - BatteryIQ
+=============================
+
+Date: 2025-09-29 13:15
+Latest Commit: 7270536 "Force deployment: ensure EV options with 12-month novated lease option are live"
+GitHub Repository: https://github.com/middlezdeveloper/BatteryIQ.git
+
+Expected EV Options (4 total):
+1. ⚡ "I have an EV now" (hasEV: true)
+2. 🚗 "Planning an EV in 3-5 years" (evTimeframe: '3-5years')
+3. 🎯 "EV within 12 months" (evTimeframe: '12months') - NEW OPTION
+4. ❌ "No EV plans" (hasEV: false, planningEV: false)
+
+Local Build Status: ✅ SUCCESSFUL
+GitHub Push Status: ✅ SUCCESSFUL
+Live Site Issues: ⚠️ EV options not updating
+
+Next Steps:
+1. Check Vercel dashboard manually
+2. Verify automatic deployment is enabled
+3. Check for build environment differences
+4. Clear CDN/browser cache
