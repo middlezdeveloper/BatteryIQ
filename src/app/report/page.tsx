@@ -748,11 +748,14 @@ function BatteryReportContent() {
                 <div className="flex items-center space-x-2">
                   <TrendingUp className="w-5 h-5 text-blue-600" />
                   <span className="text-2xl font-bold text-blue-600">
-                    +${Math.round(reportData.calculations.netCost * 0.85).toLocaleString()}
+                    3-5%
                   </span>
                 </div>
                 <p className="text-sm text-gray-600 mt-2">
-                  Solar + battery systems typically add 85% of system cost to home value
+                  Australian research shows solar systems typically increase property value by 3-5%
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Source: Australian PV Institute, University of Western Australia
                 </p>
               </div>
 
@@ -777,10 +780,13 @@ function BatteryReportContent() {
 
             <div className="space-y-4">
               <div className="p-4 bg-orange-50 rounded-lg">
-                <h3 className="font-semibold text-gray-900 mb-2">Sale Timeline Impact</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Buyer Appeal & Market Trends</h3>
                 <p className="text-sm text-gray-600">
-                  Homes with solar + battery sell 20% faster than comparable properties.
-                  Energy efficiency is increasingly important to buyers.
+                  81% of buyers consider sustainability features critical when purchasing.
+                  Properties with solar typically attract more interest and inquiries.
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Source: RealEstate.com.au buyer survey
                 </p>
               </div>
 
