@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SolarCalculator, getSolarZoneInfo } from '@/lib/solar'
+import { bomSolarAPI, getEnhancedSolarEstimate } from '@/lib/bom-solar'
 
 // GET /api/solar - Calculate solar output for given parameters
 export async function GET(request: NextRequest) {
@@ -51,20 +52,42 @@ export async function GET(request: NextRequest) {
     // Calculate STC value
     const stcData = SolarCalculator.calculateSTCValue(panelCapacityKw, solarZone)
 
-    // Calculate current generation (if requested)
+    // Enhanced current generation with real-time BOM data
     const includeCurrentGen = searchParams.get('includeCurrent') === 'true'
-    let currentGeneration = 0
-    if (includeCurrentGen) {
-      const now = new Date()
-      const currentHour = now.getHours()
-      const month = now.getMonth() + 1
+    const latitude = parseFloat(searchParams.get('latitude') || '-33.8')
+    const longitude = parseFloat(searchParams.get('longitude') || '151.2')
 
-      currentGeneration = SolarCalculator.calculateCurrentGeneration(
-        { solarZone, panelCapacityKw, panelTilt, panelAzimuth, systemEfficiency },
-        currentHour,
-        0.2, // Assume 20% cloud cover (could be from weather API)
-        month
-      )
+    let currentGeneration = 0
+    let realTimeData = null
+
+    if (includeCurrentGen) {
+      try {
+        // Try to get real-time solar conditions from BOM
+        const enhancedData = await getEnhancedSolarEstimate(
+          panelCapacityKw,
+          latitude,
+          longitude
+        )
+
+        realTimeData = enhancedData
+        currentGeneration = enhancedData.currentGeneration
+
+        console.log('🌞 Enhanced solar estimate:', enhancedData)
+      } catch (error) {
+        // Fallback to standard calculation
+        console.warn('BOM solar data unavailable, using standard calculation:', error)
+
+        const now = new Date()
+        const currentHour = now.getHours()
+        const month = now.getMonth() + 1
+
+        currentGeneration = SolarCalculator.calculateCurrentGeneration(
+          { solarZone, panelCapacityKw, panelTilt, panelAzimuth, systemEfficiency },
+          currentHour,
+          0.2, // Assume 20% cloud cover
+          month
+        )
+      }
     }
 
     // Financial calculations
@@ -85,7 +108,18 @@ export async function GET(request: NextRequest) {
       stc: stcData,
       currentGeneration: includeCurrentGen ? {
         currentKw: Math.round(currentGeneration * 100) / 100,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        realTimeData: realTimeData ? {
+          conditions: realTimeData.conditions,
+          irradiance: realTimeData.irradiance,
+          todayEstimate: realTimeData.todayEstimate,
+          dataSource: 'BOM Weather Station'
+        } : {
+          conditions: 'Estimated conditions',
+          irradiance: 800,
+          todayEstimate: solarOutput.dailyAverageGeneration,
+          dataSource: 'Standard calculations'
+        }
       } : undefined,
       financial: {
         annualSavings: Math.round(annualSavings),
