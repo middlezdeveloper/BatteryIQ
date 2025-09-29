@@ -145,6 +145,47 @@ const calculatePersonalizedReport = (userInfo: any) => {
   const batteryBoost = userInfo.hasSolar && userInfo.solarCapacity ?
     Math.round(solarGeneration * 0.3) : 0 // 30% additional self-consumption
 
+  // EV SAVINGS CALCULATION (if they have or plan EV)
+  let evSavings = { petrolCost: 0, currentPlanCost: 0, optimizedPlanCost: 0, advancedSchedulingCost: 0 }
+
+  if (userInfo.hasEV || userInfo.evTimeframe === '12months' || userInfo.evTimeframe === '3-5years') {
+    const annualKm = 15000 // Assume 15k km/year as baseline
+    const evEfficiency = 0.18 // kWh/km (average EV efficiency)
+    const annualEvKwh = annualKm * evEfficiency // ~2,700 kWh/year
+
+    // State-based petrol prices ($/L) - current averages
+    const petrolPrices: { [key: string]: number } = {
+      'NSW': 1.65, 'VIC': 1.62, 'QLD': 1.58, 'SA': 1.68, 'WA': 1.55, 'Other': 1.60
+    }
+
+    const petrolPrice = petrolPrices[stateName] || 1.60
+    const carEfficiency = 8.5 // L/100km average petrol car
+    const petrolLitres = (annualKm / 100) * carEfficiency // ~1,275L/year
+
+    // 1. Annual petrol cost
+    evSavings.petrolCost = Math.round(petrolLitres * petrolPrice) // ~$2,100/year
+
+    // 2. EV charging on current plan (peak rates ~30c/kWh)
+    evSavings.currentPlanCost = Math.round(annualEvKwh * 0.30) // ~$810/year
+
+    // 3. EV charging on optimized EV tariff
+    // EV tariffs: ~15c/kWh off-peak (midnight-6am), ~35c/kWh peak
+    // Assume 70% charging off-peak, 30% peak for optimal plan
+    const offPeakCharge = annualEvKwh * 0.70 * 0.15 // 70% at 15c/kWh
+    const peakCharge = annualEvKwh * 0.30 * 0.35 // 30% at 35c/kWh
+    evSavings.optimizedPlanCost = Math.round(offPeakCharge + peakCharge) // ~$567/year
+
+    // 4. Advanced scheduling with battery + solar coordination
+    // Midday solar charging (free) + battery stored overnight charging
+    // Assume 40% free solar charging, 40% battery storage, 20% grid off-peak
+    const solarCharge = annualEvKwh * 0.40 * 0.00 // 40% free from solar
+    const batteryCharge = annualEvKwh * 0.40 * 0.05 // 40% from battery (minimal cost)
+    const gridOffPeak = annualEvKwh * 0.20 * 0.15 // 20% grid off-peak
+    evSavings.advancedSchedulingCost = Math.round(solarCharge + batteryCharge + gridOffPeak) // ~$95/year
+
+    console.log('🚗 EV savings analysis:', evSavings)
+  }
+
   // Battery model recommendations based on size
   const batteryRecommendations = batterySize <= 10 ? [
       { brand: 'Tesla Powerwall 2', capacity: '13.5kWh', price: '$15,500', warranty: '10 years', features: ['Weather resistant', 'Integrated inverter', 'Mobile app'] },
@@ -180,7 +221,9 @@ const calculatePersonalizedReport = (userInfo: any) => {
       co2Reduction,
       solarGeneration,
       batteryBoost,
-      systemCost: batterySystemCost
+      systemCost: batterySystemCost,
+      evSavings: evSavings,
+      hasEvCalculations: userInfo.hasEV || userInfo.evTimeframe === '12months' || userInfo.evTimeframe === '3-5years'
     },
     recommendations: {
       batterySize: `${batterySize}kWh`,
@@ -479,6 +522,79 @@ function BatteryReportContent() {
             </div>
           </div>
         </div>
+
+        {/* EV Charging Cost Comparison */}
+        {reportData.calculations.hasEvCalculations && (
+          <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+              🚗 EV Charging Cost Analysis
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Based on 15,000km/year driving with your EV
+              {reportData.userInfo.evTimeframe === '12months' && ' (planned within 12 months)'}
+              {reportData.userInfo.evTimeframe === '3-5years' && ' (planned 3-5 years)'}
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Petrol Cost */}
+              <div className="text-center p-4 bg-red-50 rounded-xl border-2 border-red-200">
+                <div className="text-2xl font-bold text-red-600 mb-2">
+                  ${reportData.calculations.evSavings.petrolCost}
+                </div>
+                <div className="text-sm text-gray-600">Petrol Car</div>
+                <div className="text-xs text-gray-500 mt-1">Current costs</div>
+              </div>
+
+              {/* Current Plan */}
+              <div className="text-center p-4 bg-orange-50 rounded-xl border-2 border-orange-200">
+                <div className="text-2xl font-bold text-orange-600 mb-2">
+                  ${reportData.calculations.evSavings.currentPlanCost}
+                </div>
+                <div className="text-sm text-gray-600">EV on Current Plan</div>
+                <div className="text-xs text-gray-500 mt-1">Standard rates</div>
+              </div>
+
+              {/* Optimized Plan */}
+              <div className="text-center p-4 bg-yellow-50 rounded-xl border-2 border-yellow-300">
+                <div className="text-2xl font-bold text-yellow-600 mb-2">
+                  ${reportData.calculations.evSavings.optimizedPlanCost}
+                </div>
+                <div className="text-sm text-gray-600">EV Tariff</div>
+                <div className="text-xs text-gray-500 mt-1">Off-peak charging</div>
+              </div>
+
+              {/* Advanced Scheduling */}
+              <div className="text-center p-4 bg-green-50 rounded-xl border-2 border-green-300">
+                <div className="text-2xl font-bold text-green-600 mb-2">
+                  ${reportData.calculations.evSavings.advancedSchedulingCost}
+                </div>
+                <div className="text-sm text-gray-600">Smart Charging</div>
+                <div className="text-xs text-gray-500 mt-1">Solar + battery coordination</div>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="font-semibold text-gray-900">💰 Total Annual EV Savings</h3>
+                  <p className="text-sm text-gray-600">Petrol vs Smart Charging</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-green-600">
+                    ${reportData.calculations.evSavings.petrolCost - reportData.calculations.evSavings.advancedSchedulingCost}
+                  </div>
+                  <div className="text-sm text-gray-500">per year</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 text-center">
+              <p className="text-sm text-gray-600">
+                🎯 <strong>Smart charging strategy:</strong> 40% free solar charging + 40% battery stored energy + 20% off-peak grid
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Solar + Battery Analysis */}
         {reportData.userInfo.hasSolar && reportData.userInfo.solarCapacity && (
