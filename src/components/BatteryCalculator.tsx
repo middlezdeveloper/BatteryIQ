@@ -15,6 +15,7 @@ interface CalculatorState {
   hasSolar: boolean
   hasEV: boolean
   planningEV: boolean
+  evTimeframe?: 'current' | '12months' | '3-5years' | 'none'
 
   // Stage 3: Technical details
   quarterlyBill: number
@@ -484,9 +485,9 @@ export default function BatteryCalculator() {
                   <label className="text-lg font-semibold text-gray-900 mb-3 block">
                     Electric vehicle situation?
                   </label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <button
-                      onClick={() => updateState({ hasEV: true, planningEV: false })}
+                      onClick={() => updateState({ hasEV: true, planningEV: false, evTimeframe: 'current' })}
                       className={`p-4 border-2 rounded-lg text-center transition-all ${
                         state.hasEV === true
                           ? 'border-blue-500 bg-blue-50 text-blue-700'
@@ -498,9 +499,21 @@ export default function BatteryCalculator() {
                       <p className="text-xs text-gray-600 mt-1">Access to EV tariffs</p>
                     </button>
                     <button
-                      onClick={() => updateState({ hasEV: false, planningEV: true })}
+                      onClick={() => updateState({ hasEV: false, planningEV: true, evTimeframe: '12months' })}
                       className={`p-4 border-2 rounded-lg text-center transition-all ${
-                        state.planningEV === true
+                        state.evTimeframe === '12months'
+                          ? 'border-green-500 bg-green-50 text-green-700'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <span className="text-2xl block mb-2">🎯</span>
+                      <span className="font-semibold">EV within 12 months</span>
+                      <p className="text-xs text-gray-600 mt-1">Novated lease ready</p>
+                    </button>
+                    <button
+                      onClick={() => updateState({ hasEV: false, planningEV: true, evTimeframe: '3-5years' })}
+                      className={`p-4 border-2 rounded-lg text-center transition-all ${
+                        state.evTimeframe === '3-5years'
                           ? 'border-purple-500 bg-purple-50 text-purple-700'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
@@ -510,9 +523,9 @@ export default function BatteryCalculator() {
                       <p className="text-xs text-gray-600 mt-1">Future-proof setup</p>
                     </button>
                     <button
-                      onClick={() => updateState({ hasEV: false, planningEV: false })}
+                      onClick={() => updateState({ hasEV: false, planningEV: false, evTimeframe: 'none' })}
                       className={`p-4 border-2 rounded-lg text-center transition-all ${
-                        state.hasEV === false && state.planningEV === false
+                        state.evTimeframe === 'none'
                           ? 'border-gray-500 bg-gray-50 text-gray-700'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
