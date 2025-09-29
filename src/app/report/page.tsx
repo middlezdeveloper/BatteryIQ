@@ -734,6 +734,168 @@ function BatteryReportContent() {
           </div>
         </div>
 
+        {/* Home Value Impact */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            <Home className="w-6 h-6 mr-2 text-blue-600" />
+            Home Value & Resale Benefits
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-2">Property Value Increase</h3>
+                <div className="flex items-center space-x-2">
+                  <TrendingUp className="w-5 h-5 text-blue-600" />
+                  <span className="text-2xl font-bold text-blue-600">
+                    +${Math.round(reportData.calculations.netCost * 0.85).toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">
+                  Solar + battery systems typically add 85% of system cost to home value
+                </p>
+              </div>
+
+              <div className="p-4 bg-green-50 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-2">Market Appeal</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    Premium eco-friendly feature
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    Lower ongoing energy costs for buyers
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    Backup power during outages
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-4 bg-orange-50 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-2">Sale Timeline Impact</h3>
+                <p className="text-sm text-gray-600">
+                  Homes with solar + battery sell 20% faster than comparable properties.
+                  Energy efficiency is increasingly important to buyers.
+                </p>
+              </div>
+
+              <div className="p-4 bg-purple-50 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-2">Transferable Warranties</h3>
+                <p className="text-sm text-gray-600">
+                  Most battery warranties transfer to new owners, adding significant value
+                  proposition when selling your home.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Post-Installation Tips */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            <Award className="w-6 h-6 mr-2 text-purple-600" />
+            Essential Post-Installation Steps
+          </h2>
+
+          <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-6">
+            <h3 className="font-semibold text-amber-800 mb-2">⚠️ Important: Complete These Within 30 Days</h3>
+            <p className="text-sm text-amber-700">
+              These steps protect your investment and ensure you get maximum benefits from your system.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3 p-4 bg-red-50 rounded-lg border-l-4 border-red-400">
+                <div className="bg-red-600 text-white text-xs px-2 py-1 rounded-full w-fit mt-1">
+                  PRIORITY
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900">Notify Your Insurance Company</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Contact your home insurance provider to add your solar/battery system to your policy.
+                    Failure to notify may void coverage for system damage.
+                  </p>
+                  <div className="mt-3 p-3 bg-white rounded border text-xs">
+                    <strong>What to tell them:</strong><br/>
+                    • System value: ${reportData.calculations.systemCost.toLocaleString()}<br/>
+                    • Installation date: [Your install date]<br/>
+                    • Installer: [Your installer name]<br/>
+                    • System type: {reportData.userInfo.hasSolar ? 'Solar + Battery' : 'Battery only'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3 p-4 bg-blue-50 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-gray-900">Update Property Records</h3>
+                  <p className="text-sm text-gray-600">
+                    Inform your local council about the installation for accurate property valuations.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3 p-4 bg-green-50 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-gray-900">Set Up Monitoring</h3>
+                  <p className="text-sm text-gray-600">
+                    Download your battery manufacturer's app to track performance and optimize usage.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3 p-4 bg-purple-50 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-purple-600 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-gray-900">Register Warranties</h3>
+                  <p className="text-sm text-gray-600">
+                    Register your system with manufacturers within 30 days to activate full warranty coverage.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3 p-4 bg-orange-50 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-orange-600 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-gray-900">Schedule First Service</h3>
+                  <p className="text-sm text-gray-600">
+                    Book your first maintenance check for 6 months post-installation to ensure optimal performance.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-gray-600 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-gray-900">Keep All Documentation</h3>
+                  <p className="text-sm text-gray-600">
+                    Store installation certificates, warranties, and compliance certificates safely -
+                    you'll need them for insurance claims and when selling your home.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg">
+            <h3 className="font-semibold text-gray-900 mb-2">💡 Pro Tip: Document Everything</h3>
+            <p className="text-sm text-gray-600">
+              Take photos of your system installation, keep all paperwork organized, and maintain
+              a log of performance data. This documentation protects your investment and helps with
+              warranty claims or future troubleshooting.
+            </p>
+          </div>
+        </div>
+
         {/* Next Steps */}
         <div className="bg-gradient-to-r from-batteryGreen-600 to-solarYellow-600 rounded-2xl p-8 text-white text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to Start Saving? 🚀</h2>
