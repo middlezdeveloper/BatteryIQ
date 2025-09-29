@@ -7,8 +7,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 // Users and Sessions
@@ -61,7 +61,7 @@ model Rebate {
   startDate           DateTime
   endDate             DateTime?
   isActive            Boolean              @default(true)
-  requirements        String[]             // Array of requirements
+  requirements        String               // JSON string of requirements array
   vppRequired         Boolean              @default(false)
   vppCapableRequired  Boolean              @default(false)
   declineRate         Float?               // Annual decline percentage
@@ -75,29 +75,49 @@ model Rebate {
   @@map("rebates")
 }
 
-// Energy retailers and plans
+// Energy retailers and plans (enhanced for DMO/VDO)
 model EnergyPlan {
   id                  String               @id @default(cuid())
   retailerId          String
   retailerName        String
   planName            String
   state               String
+  distributor         String?              // For DMO/VDO
   tariffType          TariffType
+  planType            PlanType             @default(MARKET)
+
+  // Pricing structure
   peakRate            Float                // c/kWh
   offPeakRate         Float?               // c/kWh
   shoulderRate        Float?               // c/kWh
+  superOffPeakRate    Float?               // c/kWh (EV charging)
   demandRate          Float?               // $/kW/day
-  dailySupplyCharge   Float                // $/day
+  dailySupplyCharge   Float                // c/day
   feedInTariff        Float                // c/kWh
+
+  // Time-of-use schedules
+  timeOfUseSchedule   Json?                // Schedule definitions
+
+  // Plan features
   greenPower          Boolean              @default(false)
   carbonNeutral       Boolean              @default(false)
+  isEVFriendly        Boolean              @default(false)
+  hasPromotions       Boolean              @default(false)
+  promotionDetails    Json?                // Promotion information
+
+  // Tracking
   isActive            Boolean              @default(true)
+  validFrom           DateTime?
+  validTo             DateTime?
+  lastUpdated         DateTime             @default(now())
+
   projects            Project[]
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
 
-  @@index([state, isActive])
+  @@index([state, planType, isActive])
   @@index([retailerId])
+  @@index([isEVFriendly])
   @@map("energy_plans")
 }
 
@@ -295,7 +315,7 @@ model SEOData {
   title               String
   description         String
   canonicalUrl        String?
-  keywords            String[]
+  keywords            String               // JSON string of keywords array
   schemaMarkup        Json?                // JSON-LD structured data
   locationId          String?
   isActive            Boolean              @default(true)
@@ -319,7 +339,7 @@ model Content {
   content             String               // Markdown content
   contentType         ContentType
   category            String?
-  tags                String[]
+  tags                String               // JSON string of tags array
   isPublished         Boolean              @default(false)
   publishedAt         DateTime?
   seoTitle            String?
@@ -347,7 +367,7 @@ model Installer {
 
   // Location and service areas
   address             Json                 // Address object
-  servicePostcodes    String[]             // Array of postcodes served
+  servicePostcodes    String               // JSON string of postcodes array
   serviceRadius       Int?                 // km radius
 
   // Certifications and ratings
@@ -364,7 +384,7 @@ model Installer {
   // Business details
   yearsExperience     Int?
   teamSize            Int?
-  specializesIn       String[]             // 'residential', 'commercial', 'battery', 'solar'
+  specializesIn       String               // JSON string of specializations array
 
   isActive            Boolean              @default(true)
   createdAt           DateTime             @default(now())
@@ -388,6 +408,13 @@ enum TariffType {
   TIME_OF_USE
   DEMAND
   BLOCK
+}
+
+enum PlanType {
+  DMO          // Default Market Offer (NSW, QLD, SA)
+  VDO          // Victorian Default Offer
+  MARKET       // Market retail plans
+  STANDING     // Standing offer
 }
 
 enum BatteryChemistry {

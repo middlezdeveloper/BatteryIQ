@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       locations = await prisma.location.findMany({
         where: {
           OR: [
-            { suburb: { contains: query, mode: 'insensitive' } },
+            { suburb: { contains: query } },
             { postcode: { contains: query } }
           ]
         },

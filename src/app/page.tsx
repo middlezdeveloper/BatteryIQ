@@ -1,18 +1,19 @@
-import { Button } from "@/components/ui/button"
-import { Calculator, Zap, TrendingUp, Shield } from "lucide-react"
+import GridStatus from '@/components/GridStatus'
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-batteryGreen-50 to-solarYellow-50">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+      <header className="bg-white border-b sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <Zap className="h-8 w-8 text-batteryGreen-600" />
+            <div className="h-8 w-8 bg-batteryGreen-600 rounded flex items-center justify-center">
+              <span className="text-white font-bold">⚡</span>
+            </div>
             <span className="text-2xl font-bold text-gray-900">BatteryIQ</span>
           </div>
           <nav className="hidden md:flex space-x-6">
-            <a href="#calculator" className="text-gray-600 hover:text-batteryGreen-600">Calculator</a>
+            <a href="/calculator" className="text-gray-600 hover:text-batteryGreen-600">Calculator</a>
             <a href="#rebates" className="text-gray-600 hover:text-batteryGreen-600">Rebates</a>
             <a href="#guides" className="text-gray-600 hover:text-batteryGreen-600">Guides</a>
             <a href="#installers" className="text-gray-600 hover:text-batteryGreen-600">Installers</a>
@@ -22,7 +23,7 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="py-20 px-4">
-        <div className="container mx-auto text-center">
+        <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6">
             Intelligent Battery
             <span className="text-batteryGreen-600"> Decisions</span>
@@ -35,7 +36,7 @@ export default function Home() {
           {/* Federal Rebate Highlight */}
           <div className="bg-solarYellow-100 border border-solarYellow-300 rounded-lg p-4 mb-8 max-w-2xl mx-auto">
             <div className="flex items-center justify-center space-x-2 mb-2">
-              <Shield className="h-5 w-5 text-solarYellow-600" />
+              <span className="h-5 w-5 bg-solarYellow-600 rounded text-white text-xs flex items-center justify-center">🛡</span>
               <span className="font-semibold text-solarYellow-800">Federal Battery Rebate 2025</span>
             </div>
             <p className="text-solarYellow-700">
@@ -45,27 +46,39 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-batteryGreen-600 hover:bg-batteryGreen-700 text-white px-8 py-4 text-lg">
-              <Calculator className="mr-2 h-5 w-5" />
+            <a href="/calculator" className="bg-batteryGreen-600 hover:bg-batteryGreen-700 text-white px-8 py-4 text-lg rounded-md font-medium inline-flex items-center justify-center">
+              <span className="mr-2">🧮</span>
               Calculate My Savings
-            </Button>
-            <Button variant="outline" size="lg" className="border-batteryGreen-600 text-batteryGreen-600 hover:bg-batteryGreen-50 px-8 py-4 text-lg">
+            </a>
+            <button className="border border-batteryGreen-600 text-batteryGreen-600 hover:bg-batteryGreen-50 px-8 py-4 text-lg rounded-md font-medium">
               Learn About Rebates
-            </Button>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Real-Time Grid Status */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
+            Live Australian Grid Status
+          </h2>
+          <div className="max-w-4xl mx-auto">
+            <GridStatus state="NSW" />
           </div>
         </div>
       </section>
 
       {/* Key Features */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
             Why Choose BatteryIQ?
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center p-6">
               <div className="bg-batteryGreen-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="h-8 w-8 text-batteryGreen-600" />
+                <span className="text-2xl">📈</span>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Multi-Objective Optimization</h3>
               <p className="text-gray-600">
@@ -76,7 +89,7 @@ export default function Home() {
 
             <div className="text-center p-6">
               <div className="bg-solarYellow-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Shield className="h-8 w-8 text-solarYellow-600" />
+                <span className="text-2xl">🛡️</span>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Real-Time Rebate Intelligence</h3>
               <p className="text-gray-600">
@@ -87,7 +100,7 @@ export default function Home() {
 
             <div className="text-center p-6">
               <div className="bg-batteryGreen-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Zap className="h-8 w-8 text-batteryGreen-600" />
+                <span className="text-2xl">⚡</span>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Smart Grid Strategies</h3>
               <p className="text-gray-600">
@@ -100,8 +113,8 @@ export default function Home() {
       </section>
 
       {/* 2025 Rebate Confusion Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
             2025 Battery Rebate Confusion? We've Got Answers.
           </h2>
@@ -128,11 +141,13 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
-        <div className="container mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <Zap className="h-6 w-6 text-batteryGreen-400" />
+                <div className="h-6 w-6 bg-batteryGreen-400 rounded flex items-center justify-center">
+                  <span className="text-white text-xs">⚡</span>
+                </div>
                 <span className="text-xl font-bold">BatteryIQ</span>
               </div>
               <p className="text-gray-400">
