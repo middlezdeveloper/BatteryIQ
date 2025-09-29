@@ -1,22 +1,23 @@
 import GridStatus from '@/components/GridStatus'
+import { BRAND_VOICE } from '@/lib/brand'
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-batteryGreen-50 to-solarYellow-50">
+    <div className="min-h-screen bg-gradient-to-br from-morning-sky to-whisper-gray">
       {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-50">
+      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 bg-batteryGreen-600 rounded flex items-center justify-center">
-              <span className="text-white font-bold">⚡</span>
+          <div className="flex items-center space-x-3">
+            <div className="h-10 w-10 bg-gradient-to-br from-battery-green to-electric-yellow rounded-lg flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-lg">⚡</span>
             </div>
-            <span className="text-2xl font-bold text-gray-900">BatteryIQ</span>
+            <span className="text-2xl font-heading font-bold text-midnight-blue">BatteryIQ</span>
           </div>
-          <nav className="hidden md:flex space-x-6">
-            <a href="/calculator" className="text-gray-600 hover:text-batteryGreen-600">Calculator</a>
-            <a href="#rebates" className="text-gray-600 hover:text-batteryGreen-600">Rebates</a>
-            <a href="#guides" className="text-gray-600 hover:text-batteryGreen-600">Guides</a>
-            <a href="#installers" className="text-gray-600 hover:text-batteryGreen-600">Installers</a>
+          <nav className="hidden md:flex space-x-8">
+            <a href="/calculator" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Calculator</a>
+            <a href="#rebates" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Rebates</a>
+            <a href="#guides" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Guides</a>
+            <a href="#installers" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Installers</a>
           </nav>
         </div>
       </header>
@@ -24,34 +25,36 @@ export default function Home() {
       {/* Hero Section */}
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6">
-            Intelligent Battery
-            <span className="text-batteryGreen-600"> Decisions</span>
+          <h1 className="text-5xl md:text-7xl font-heading font-bold text-midnight-blue mb-6 tracking-tight">
+            Make Energy Storage
+            <span className="text-battery-green"> Delightfully</span>
+            <br />
+            <span className="text-electric-yellow">Unexpected</span>
           </h1>
-          <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Smart battery optimization with real-time Federal & State rebate calculations.
-            Maximize cost savings, minimize emissions, optimize backup power.
+          <p className="text-xl md:text-2xl text-serious-gray mb-8 max-w-4xl mx-auto font-body leading-relaxed">
+            We're not building another boring energy calculator. Think <strong>Oatly's irreverent honesty</strong> meets <strong>Tesla's sleek tech</strong>,
+            wrapped in Australian humor. Because paying for sunshine feels wrong.
           </p>
 
-          {/* Federal Rebate Highlight */}
-          <div className="bg-solarYellow-100 border border-solarYellow-300 rounded-lg p-4 mb-8 max-w-2xl mx-auto">
-            <div className="flex items-center justify-center space-x-2 mb-2">
-              <span className="h-5 w-5 bg-solarYellow-600 rounded text-white text-xs flex items-center justify-center">🛡</span>
-              <span className="font-semibold text-solarYellow-800">Federal Battery Rebate 2025</span>
+          {/* Playful Rebate Highlight */}
+          <div className="bg-gradient-to-r from-electric-yellow/20 to-battery-green/20 border-2 border-electric-yellow/30 rounded-xl p-6 mb-8 max-w-3xl mx-auto shadow-lg">
+            <div className="flex items-center justify-center space-x-3 mb-3">
+              <span className="h-8 w-8 bg-money-green rounded-full text-white text-sm flex items-center justify-center animate-pulse">💰</span>
+              <span className="font-heading font-bold text-lg text-midnight-blue">Government Money Feels Different</span>
             </div>
-            <p className="text-solarYellow-700">
-              Save up to <strong>$4,650</strong> with the Cheaper Home Batteries Program.
-              Plus state rebates! Calculator shows exact savings for your location.
+            <p className="text-trust-navy text-lg font-body">
+              Ka-ching! Save up to <strong className="text-money-green font-accent text-xl">$4,650</strong> with federal rebates, plus whatever your state throws in.
+              Our calculator does the boring math so you don't have to. You're welcome.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="/calculator" className="bg-batteryGreen-600 hover:bg-batteryGreen-700 text-white px-8 py-4 text-lg rounded-md font-medium inline-flex items-center justify-center">
-              <span className="mr-2">🧮</span>
-              Calculate My Savings
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+            <a href="/calculator" className="bg-gradient-to-r from-battery-green to-money-green hover:from-battery-green/90 hover:to-money-green/90 text-white px-8 py-4 text-lg rounded-xl font-heading font-semibold inline-flex items-center justify-center shadow-lg hover:shadow-xl transition-all transform hover:scale-105">
+              <span className="mr-3 text-xl">🚀</span>
+              {BRAND_VOICE.ctaCopy.getStarted}
             </a>
-            <button className="border border-batteryGreen-600 text-batteryGreen-600 hover:bg-batteryGreen-50 px-8 py-4 text-lg rounded-md font-medium">
-              Learn About Rebates
+            <button className="border-2 border-battery-green text-battery-green hover:bg-battery-green hover:text-white px-8 py-4 text-lg rounded-xl font-heading font-medium transition-all">
+              Show Me The Money
             </button>
           </div>
         </div>
@@ -70,42 +73,45 @@ export default function Home() {
       </section>
 
       {/* Key Features */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-20 bg-whisper-gray">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            Why Choose BatteryIQ?
+          <h2 className="text-4xl font-heading font-bold text-center text-midnight-blue mb-4">
+            Why We're Different
           </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center p-6">
-              <div className="bg-batteryGreen-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">📈</span>
+          <p className="text-xl text-center text-chat-gray mb-16 max-w-2xl mx-auto">
+            We crunched 47 billion calculations so you don't have to. You're welcome.
+          </p>
+          <div className="grid md:grid-cols-3 gap-12">
+            <div className="text-center p-8 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all">
+              <div className="bg-gradient-to-br from-money-green to-battery-green w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <span className="text-3xl">🎯</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Multi-Objective Optimization</h3>
-              <p className="text-gray-600">
-                Balance cost savings, emissions reduction, and backup power based on your priorities.
-                Smart algorithms find your perfect battery size.
+              <h3 className="text-xl font-heading font-bold text-midnight-blue mb-4">Smart But Not Smug</h3>
+              <p className="text-serious-gray font-body leading-relaxed">
+                {BRAND_VOICE.motivationalCopy.batteryBenefits} Our algorithms balance cost, planet-saving,
+                and backup power without making your brain hurt.
               </p>
             </div>
 
-            <div className="text-center p-6">
-              <div className="bg-solarYellow-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">🛡️</span>
+            <div className="text-center p-8 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all">
+              <div className="bg-gradient-to-br from-electric-yellow to-warning-amber w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <span className="text-3xl">💰</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Real-Time Rebate Intelligence</h3>
-              <p className="text-gray-600">
-                Federal + state rebate stacking with 2025 confusion clarity. VPP requirements,
-                installation timing, and rebate decline schedules explained.
+              <h3 className="text-xl font-heading font-bold text-midnight-blue mb-4">Rebate Whisperer</h3>
+              <p className="text-serious-gray font-body leading-relaxed">
+                Federal + state rebate stacking decoded. No more 2025 confusion about VPP requirements
+                or commissioning dates. We speak government.
               </p>
             </div>
 
-            <div className="text-center p-6">
-              <div className="bg-batteryGreen-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">⚡</span>
+            <div className="text-center p-8 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all">
+              <div className="bg-gradient-to-br from-grid-blue to-midnight-blue w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <span className="text-3xl">⚡</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Smart Grid Strategies</h3>
-              <p className="text-gray-600">
-                Grid-charging optimization and non-solar battery scenarios. Perfect for renters
-                and those maximizing time-of-use savings.
+              <h3 className="text-xl font-heading font-bold text-midnight-blue mb-4">Grid Optimization</h3>
+              <p className="text-serious-gray font-body leading-relaxed">
+                Real-time AEMO data meets time-of-use arbitrage. Because outsmarting the energy market
+                feels pretty bloody good.
               </p>
             </div>
           </div>
