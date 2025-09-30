@@ -1,6 +1,7 @@
 import GridStatus from '@/components/GridStatus'
 import { BRAND_VOICE } from '@/lib/brand'
 import { BatteryIQLogo } from '@/components/ui/BatteryIQLogo'
+import MobileNavigation from '@/components/MobileNavigation'
 
 export default function Home() {
   return (
@@ -14,13 +15,19 @@ export default function Home() {
             clickable={true}
             showText={true}
           />
+
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8">
             <a href="/calculator" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Calculator</a>
             <a href="/grid-status" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Grid Status</a>
             <a href="#rebates" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Rebates</a>
             <a href="#guides" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Guides</a>
           </nav>
+
+          {/* Mobile Navigation */}
+          <MobileNavigation />
         </div>
+
       </header>
 
       {/* Hero Section */}
@@ -152,11 +159,15 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="h-6 w-6 bg-batteryGreen-400 rounded flex items-center justify-center">
-                  <span className="text-white text-xs">⚡</span>
-                </div>
-                <span className="text-xl font-bold">BatteryIQ</span>
+              <div className="mb-4">
+                <BatteryIQLogo
+                  size={24}
+                  animated={false}
+                  clickable={false}
+                  showText={true}
+                  color="#00D97E"
+                  className="[&_span]:text-white [&_span]:text-xl"
+                />
               </div>
               <p className="text-gray-400">
                 Intelligent battery decisions for smart, environmentally conscious Australians.
