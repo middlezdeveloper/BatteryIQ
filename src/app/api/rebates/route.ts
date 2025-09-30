@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Calculate rebate amounts for given battery capacity
-    const rebatesWithCalculations = rebates.map(rebate => {
+    const rebatesWithCalculations = rebates.map((rebate: any) => {
       let eligibleAmount = 0
       let maxRebate = 0
 
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       rebates: rebatesWithCalculations,
-      totalEligible: rebatesWithCalculations.reduce((sum, r) => sum + r.eligibleAmount, 0)
+      totalEligible: rebatesWithCalculations.reduce((sum: number, r: any) => sum + r.eligibleAmount, 0)
     })
   } catch (error) {
     console.error('Rebate fetch error:', error)
