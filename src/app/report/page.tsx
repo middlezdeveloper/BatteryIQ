@@ -3,6 +3,8 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Battery, DollarSign, Leaf, Home, TrendingUp, Zap, Clock, Award, CheckCircle } from 'lucide-react'
+import { BRAND_VOICE } from '@/lib/brand'
+import { BatteryIQLogo } from '@/components/ui/BatteryIQLogo'
 
 // Calculation functions
 const calculatePersonalizedReport = (userInfo: any) => {
@@ -270,17 +272,17 @@ function BatteryReportContent() {
   }, [searchParams])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-batteryGreen-50 to-solarYellow-50">
+    <div className="min-h-screen bg-gradient-to-br from-morning-sky to-whisper-gray">
       {/* Header */}
       <header className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 bg-batteryGreen-600 rounded flex items-center justify-center">
-              <span className="text-white font-bold">⚡</span>
-            </div>
-            <span className="text-2xl font-bold text-gray-900">BatteryIQ</span>
-          </div>
-          <span className="text-sm text-gray-600">Personal Battery Report</span>
+          <BatteryIQLogo
+            size={32}
+            animated={false}
+            clickable={true}
+            showText={true}
+          />
+          <span className="text-sm text-serious-gray">Personal Battery Report</span>
         </div>
       </header>
 
@@ -288,27 +290,27 @@ function BatteryReportContent() {
         {/* Report Header */}
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            <h1 className="text-4xl font-heading font-bold text-midnight-blue mb-2">
               Your Personalized Battery Report 🎯
             </h1>
-            <p className="text-lg text-gray-600">
-              Based on your {reportData.userInfo.postcode} location and energy usage
+            <p className="text-lg text-serious-gray font-body">
+              Based on your {reportData.userInfo.postcode} location and energy usage. Revenge on power companies, incoming.
             </p>
           </div>
 
           {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="text-center p-6 bg-batteryGreen-50 rounded-xl">
-              <div className="text-3xl font-bold text-batteryGreen-600">
+            <div className="text-center p-6 bg-battery-green/10 rounded-xl">
+              <div className="text-3xl font-bold text-battery-green">
                 ${reportData.calculations.potentialSavings}
               </div>
-              <div className="text-sm text-gray-600 mt-1">Annual Savings</div>
+              <div className="text-sm text-serious-gray mt-1">Annual Savings</div>
             </div>
-            <div className="text-center p-6 bg-solarYellow-50 rounded-xl">
-              <div className="text-3xl font-bold text-solarYellow-600">
+            <div className="text-center p-6 bg-electric-yellow/10 rounded-xl">
+              <div className="text-3xl font-bold text-electric-yellow">
                 ${reportData.calculations.totalRebates}
               </div>
-              <div className="text-sm text-gray-600 mt-1">Total Rebates</div>
+              <div className="text-sm text-serious-gray mt-1">Total Rebates</div>
               <div className="text-xs text-gray-500 mt-1">
                 Federal: ${reportData.calculations.federalRebate} + {reportData.calculations.stateName}: ${reportData.calculations.stateRebate}
               </div>
@@ -317,21 +319,21 @@ function BatteryReportContent() {
               <div className="text-3xl font-bold text-orange-600">
                 {reportData.calculations.co2Reduction}t
               </div>
-              <div className="text-sm text-gray-600 mt-1">CO₂ Reduction/Year</div>
+              <div className="text-sm text-serious-gray mt-1">CO₂ Reduction/Year</div>
             </div>
             <div className="text-center p-6 bg-blue-50 rounded-xl">
               <div className="text-3xl font-bold text-blue-600">
                 {reportData.calculations.paybackYears} years
               </div>
-              <div className="text-sm text-gray-600 mt-1">Payback Period</div>
+              <div className="text-sm text-serious-gray mt-1">Payback Period</div>
             </div>
           </div>
 
           {/* Federal Rebate Highlight */}
-          <div className="bg-gradient-to-r from-solarYellow-100 to-batteryGreen-100 border-2 border-solarYellow-300 rounded-xl p-6 mb-8">
+          <div className="bg-gradient-to-r from-electric-yellow/20 to-batteryGreen-100 border-2 border-electric-yellow/50 rounded-xl p-6 mb-8">
             <div className="flex items-center justify-center mb-4">
-              <Award className="w-8 h-8 text-solarYellow-600 mr-3" />
-              <h3 className="text-2xl font-bold text-gray-900">Federal Rebate Eligible: ${reportData.calculations.totalRebates}</h3>
+              <Award className="w-8 h-8 text-electric-yellow mr-3" />
+              <h3 className="text-2xl font-bold text-midnight-blue">Federal Rebate Eligible: ${reportData.calculations.totalRebates}</h3>
             </div>
             <div className="text-center mb-4">
               <p className="text-lg text-gray-700 mb-2">
@@ -358,12 +360,12 @@ function BatteryReportContent() {
 
             {/* Eligibility Requirements */}
             <div className="bg-white rounded-lg p-4 text-left">
-              <h4 className="font-bold text-gray-900 mb-3">📋 Key Eligibility Requirements:</h4>
+              <h4 className="font-bold text-midnight-blue mb-3">📋 Key Eligibility Requirements:</h4>
 
               {/* Federal Requirements */}
               <div className="mb-3">
                 <p className="font-semibold text-gray-700 mb-1">Federal Cheaper Home Batteries Program:</p>
-                <ul className="text-sm text-gray-600 space-y-1">
+                <ul className="text-sm text-serious-gray space-y-1">
                   <li>• ✅ <strong>No income test</strong> - available to all income levels</li>
                   <li>• Installation date: Certificate of Electrical Safety on/after July 1, 2025</li>
                   <li>• Open to homeowners, small businesses, community facilities</li>
@@ -376,7 +378,7 @@ function BatteryReportContent() {
               {/* State Requirements */}
               <div className="mb-3">
                 <p className="font-semibold text-gray-700 mb-1">{reportData.calculations.stateName} State Rebate:</p>
-                <ul className="text-sm text-gray-600 space-y-1">
+                <ul className="text-sm text-serious-gray space-y-1">
                   {reportData.calculations.stateName === 'VIC' && (
                     <>
                       <li>• Household income under $210,000</li>
@@ -421,8 +423,8 @@ function BatteryReportContent() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Financial Analysis */}
           <div className="bg-white rounded-2xl shadow-xl p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-              <DollarSign className="w-6 h-6 mr-2 text-batteryGreen-600" />
+            <h2 className="text-2xl font-bold text-midnight-blue mb-6 flex items-center">
+              <DollarSign className="w-6 h-6 mr-2 text-battery-green" />
               Financial Analysis
             </h2>
 
@@ -434,21 +436,21 @@ function BatteryReportContent() {
                 </div>
                 <span className="font-semibold">${reportData.calculations.annualBill}</span>
               </div>
-              <div className="flex justify-between items-center p-4 bg-batteryGreen-50 rounded-lg">
+              <div className="flex justify-between items-center p-4 bg-battery-green/10 rounded-lg">
                 <div>
                   <span className="text-gray-700">Total Annual Savings</span>
                   <p className="text-xs text-gray-500">All battery benefits combined</p>
                 </div>
-                <span className="font-semibold text-batteryGreen-600">-${reportData.calculations.potentialSavings}</span>
+                <span className="font-semibold text-battery-green">-${reportData.calculations.potentialSavings}</span>
               </div>
 
               {reportData.calculations.solarStorageSavings > 0 && (
-                <div className="flex justify-between items-center p-4 bg-solarYellow-50 rounded-lg">
+                <div className="flex justify-between items-center p-4 bg-electric-yellow/10 rounded-lg">
                   <div>
                     <span className="text-gray-700">├ Solar Storage Value</span>
                     <p className="text-xs text-gray-500">Store excess solar instead of selling at 5c, use at 45c</p>
                   </div>
-                  <span className="font-semibold text-solarYellow-600">${reportData.calculations.solarStorageSavings}</span>
+                  <span className="font-semibold text-electric-yellow">${reportData.calculations.solarStorageSavings}</span>
                 </div>
               )}
 
@@ -478,9 +480,9 @@ function BatteryReportContent() {
               </div>
             </div>
 
-            <div className="mt-6 p-4 bg-gradient-to-r from-batteryGreen-50 to-solarYellow-50 rounded-lg">
-              <h3 className="font-semibold text-gray-900 mb-2">Time-of-Use Tariff Benefit</h3>
-              <p className="text-sm text-gray-600">
+            <div className="mt-6 p-4 bg-gradient-to-r from-battery-green/10 to-electric-yellow/10 rounded-lg">
+              <h3 className="font-semibold text-midnight-blue mb-2">Time-of-Use Tariff Benefit</h3>
+              <p className="text-sm text-serious-gray">
                 Your current {reportData.userInfo.currentTariff} tariff is perfect for battery arbitrage!
                 Store cheap off-peak power and use it during expensive peak times.
               </p>
@@ -489,7 +491,7 @@ function BatteryReportContent() {
 
           {/* Environmental Impact */}
           <div className="bg-white rounded-2xl shadow-xl p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            <h2 className="text-2xl font-bold text-midnight-blue mb-6 flex items-center">
               <Leaf className="w-6 h-6 mr-2 text-green-600" />
               Environmental Impact
             </h2>
@@ -499,7 +501,7 @@ function BatteryReportContent() {
                 <div className="text-4xl font-bold text-green-600 mb-2">
                   {reportData.calculations.co2Reduction * 25}t
                 </div>
-                <div className="text-sm text-gray-600">Lifetime CO₂ Reduction</div>
+                <div className="text-sm text-serious-gray">Lifetime CO₂ Reduction</div>
                 <div className="text-xs text-gray-500 mt-1">
                   Equivalent to planting {Math.round(reportData.calculations.co2Reduction * 25 * 16)} trees
                 </div>
@@ -510,13 +512,13 @@ function BatteryReportContent() {
                   <div className="text-2xl font-bold text-orange-600">
                     {Math.round(reportData.calculations.co2Reduction * 2.4)}
                   </div>
-                  <div className="text-xs text-gray-600">Cars off road/year</div>
+                  <div className="text-xs text-serious-gray">Cars off road/year</div>
                 </div>
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
                   <div className="text-2xl font-bold text-blue-600">
                     {Math.round(reportData.calculations.co2Reduction * 0.85)}%
                   </div>
-                  <div className="text-xs text-gray-600">Household footprint reduction</div>
+                  <div className="text-xs text-serious-gray">Household footprint reduction</div>
                 </div>
               </div>
             </div>
@@ -526,10 +528,10 @@ function BatteryReportContent() {
         {/* EV Charging Cost Comparison */}
         {reportData.calculations.hasEvCalculations && (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            <h2 className="text-2xl font-bold text-midnight-blue mb-6 flex items-center">
               🚗 EV Charging Cost Analysis
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-serious-gray mb-6">
               Based on 15,000km/year driving with your EV
               {reportData.userInfo.evTimeframe === '12months' && ' (planned within 12 months)'}
               {reportData.userInfo.evTimeframe === '3-5years' && ' (planned 3-5 years)'}
@@ -541,7 +543,7 @@ function BatteryReportContent() {
                 <div className="text-2xl font-bold text-red-600 mb-2">
                   ${reportData.calculations.evSavings.petrolCost}
                 </div>
-                <div className="text-sm text-gray-600">Petrol Car</div>
+                <div className="text-sm text-serious-gray">Petrol Car</div>
                 <div className="text-xs text-gray-500 mt-1">Current costs</div>
               </div>
 
@@ -550,7 +552,7 @@ function BatteryReportContent() {
                 <div className="text-2xl font-bold text-orange-600 mb-2">
                   ${reportData.calculations.evSavings.currentPlanCost}
                 </div>
-                <div className="text-sm text-gray-600">EV on Current Plan</div>
+                <div className="text-sm text-serious-gray">EV on Current Plan</div>
                 <div className="text-xs text-gray-500 mt-1">Standard rates</div>
               </div>
 
@@ -559,7 +561,7 @@ function BatteryReportContent() {
                 <div className="text-2xl font-bold text-yellow-600 mb-2">
                   ${reportData.calculations.evSavings.optimizedPlanCost}
                 </div>
-                <div className="text-sm text-gray-600">EV Tariff</div>
+                <div className="text-sm text-serious-gray">EV Tariff</div>
                 <div className="text-xs text-gray-500 mt-1">Off-peak charging</div>
               </div>
 
@@ -568,7 +570,7 @@ function BatteryReportContent() {
                 <div className="text-2xl font-bold text-green-600 mb-2">
                   ${reportData.calculations.evSavings.advancedSchedulingCost}
                 </div>
-                <div className="text-sm text-gray-600">Smart Charging</div>
+                <div className="text-sm text-serious-gray">Smart Charging</div>
                 <div className="text-xs text-gray-500 mt-1">Solar + battery coordination</div>
               </div>
             </div>
@@ -576,8 +578,8 @@ function BatteryReportContent() {
             <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="font-semibold text-gray-900">💰 Total Annual EV Savings</h3>
-                  <p className="text-sm text-gray-600">Petrol vs Smart Charging</p>
+                  <h3 className="font-semibold text-midnight-blue">💰 Total Annual EV Savings</h3>
+                  <p className="text-sm text-serious-gray">Petrol vs Smart Charging</p>
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-green-600">
@@ -589,7 +591,7 @@ function BatteryReportContent() {
             </div>
 
             <div className="mt-4 text-center">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-serious-gray">
                 🎯 <strong>Smart charging strategy:</strong> 40% free solar charging + 40% battery stored energy + 20% off-peak grid
               </p>
             </div>
@@ -599,35 +601,35 @@ function BatteryReportContent() {
         {/* Solar + Battery Analysis */}
         {reportData.userInfo.hasSolar && reportData.userInfo.solarCapacity && (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-              <Zap className="w-6 h-6 mr-2 text-solarYellow-600" />
+            <h2 className="text-2xl font-bold text-midnight-blue mb-6 flex items-center">
+              <Zap className="w-6 h-6 mr-2 text-electric-yellow" />
               Your {reportData.userInfo.solarCapacity}kW Solar + Battery System
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center p-6 bg-solarYellow-50 rounded-xl">
-                <div className="text-3xl font-bold text-solarYellow-600">
+              <div className="text-center p-6 bg-electric-yellow/10 rounded-xl">
+                <div className="text-3xl font-bold text-electric-yellow">
                   {reportData.calculations.solarGeneration}
                 </div>
-                <div className="text-sm text-gray-600 mt-1">kWh Annual Solar Generation</div>
+                <div className="text-sm text-serious-gray mt-1">kWh Annual Solar Generation</div>
               </div>
-              <div className="text-center p-6 bg-batteryGreen-50 rounded-xl">
-                <div className="text-3xl font-bold text-batteryGreen-600">
+              <div className="text-center p-6 bg-battery-green/10 rounded-xl">
+                <div className="text-3xl font-bold text-battery-green">
                   +{reportData.calculations.batteryBoost}
                 </div>
-                <div className="text-sm text-gray-600 mt-1">kWh Additional Self-Consumption</div>
+                <div className="text-sm text-serious-gray mt-1">kWh Additional Self-Consumption</div>
               </div>
               <div className="text-center p-6 bg-orange-50 rounded-xl">
                 <div className="text-3xl font-bold text-orange-600">
                   85%
                 </div>
-                <div className="text-sm text-gray-600 mt-1">Total Self-Consumption Rate</div>
+                <div className="text-sm text-serious-gray mt-1">Total Self-Consumption Rate</div>
               </div>
             </div>
 
-            <div className="mt-6 p-4 bg-gradient-to-r from-solarYellow-50 to-batteryGreen-50 rounded-lg">
-              <h3 className="font-semibold text-gray-900 mb-2">Perfect Solar + Battery Match! 🔥</h3>
-              <p className="text-sm text-gray-600">
+            <div className="mt-6 p-4 bg-gradient-to-r from-electric-yellow/10 to-battery-green/10 rounded-lg">
+              <h3 className="font-semibold text-midnight-blue mb-2">Perfect Solar + Battery Match! 🔥</h3>
+              <p className="text-sm text-serious-gray">
                 Your {reportData.userInfo.solarCapacity}kW system generates enough excess power to make battery storage highly profitable.
                 You'll boost your solar self-consumption from ~55% to 85%!
               </p>
@@ -637,14 +639,14 @@ function BatteryReportContent() {
 
         {/* Battery Model Recommendations */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-            <Battery className="w-6 h-6 mr-2 text-batteryGreen-600" />
+          <h2 className="text-2xl font-bold text-midnight-blue mb-6 flex items-center">
+            <Battery className="w-6 h-6 mr-2 text-battery-green" />
             Recommended Battery Systems
           </h2>
 
-          <div className="mb-6 p-4 bg-batteryGreen-50 rounded-lg">
-            <h3 className="font-semibold text-gray-900 mb-2">Best for your {reportData.userInfo.householdSize}-person household: {reportData.recommendations.batterySize}</h3>
-            <p className="text-sm text-gray-600">
+          <div className="mb-6 p-4 bg-battery-green/10 rounded-lg">
+            <h3 className="font-semibold text-midnight-blue mb-2">Best for your {reportData.userInfo.householdSize}-person household: {reportData.recommendations.batterySize}</h3>
+            <p className="text-sm text-serious-gray">
               Based on your usage patterns and home setup, here are our top 3 recommendations:
             </p>
           </div>
@@ -652,23 +654,23 @@ function BatteryReportContent() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             {reportData.recommendations.batteryModels?.map((battery, index) => (
               <div key={index} className={`border-2 rounded-xl p-4 transition-all hover:shadow-lg ${
-                index === 0 ? 'border-batteryGreen-300 bg-batteryGreen-50' : 'border-gray-200 hover:border-batteryGreen-200'
+                index === 0 ? 'border-battery-green/50 bg-battery-green/10' : 'border-gray-200 hover:border-battery-green/30'
               }`}>
                 {index === 0 && (
-                  <div className="bg-batteryGreen-600 text-white text-xs px-2 py-1 rounded-full w-fit mb-2">
+                  <div className="bg-battery-green text-white text-xs px-2 py-1 rounded-full w-fit mb-2">
                     RECOMMENDED
                   </div>
                 )}
-                <h3 className="font-bold text-gray-900 mb-1">{battery.brand}</h3>
-                <p className="text-lg font-semibold text-batteryGreen-600 mb-2">{battery.capacity}</p>
-                <p className="text-xl font-bold text-gray-900 mb-3">{battery.price}</p>
-                <div className="text-xs text-gray-600 mb-3">
+                <h3 className="font-bold text-midnight-blue mb-1">{battery.brand}</h3>
+                <p className="text-lg font-semibold text-battery-green mb-2">{battery.capacity}</p>
+                <p className="text-xl font-bold text-midnight-blue mb-3">{battery.price}</p>
+                <div className="text-xs text-serious-gray mb-3">
                   <p>Warranty: {battery.warranty}</p>
                 </div>
                 <div className="space-y-1">
                   {battery.features.map((feature, fidx) => (
-                    <div key={fidx} className="flex items-center text-xs text-gray-600">
-                      <CheckCircle className="w-3 h-3 text-batteryGreen-500 mr-1" />
+                    <div key={fidx} className="flex items-center text-xs text-serious-gray">
+                      <CheckCircle className="w-3 h-3 text-battery-green/100 mr-1" />
                       {feature}
                     </div>
                   ))}
@@ -680,17 +682,17 @@ function BatteryReportContent() {
 
         {/* General Recommendations */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+          <h2 className="text-2xl font-bold text-midnight-blue mb-6">
             Installation & Setup Recommendations 🎯
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <div className="flex items-start space-x-3 p-4 bg-solarYellow-50 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-solarYellow-600 mt-0.5" />
+              <div className="flex items-start space-x-3 p-4 bg-electric-yellow/10 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-electric-yellow mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Tariff Optimization</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-semibold text-midnight-blue">Tariff Optimization</h3>
+                  <p className="text-sm text-serious-gray">
                     {reportData.recommendations.bestTariff === 'Your current tariff is already optimal!'
                       ? reportData.recommendations.bestTariff
                       : `Switch to ${reportData.recommendations.bestTariff} for extra $${reportData.recommendations.switchSavings}/year savings`
@@ -702,8 +704,8 @@ function BatteryReportContent() {
               <div className="flex items-start space-x-3 p-4 bg-blue-50 rounded-lg">
                 <Clock className="w-5 h-5 text-blue-600 mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Installation Timeline</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-semibold text-midnight-blue">Installation Timeline</h3>
+                  <p className="text-sm text-serious-gray">
                     Typical installation: {reportData.recommendations.installationTimeframe}
                   </p>
                 </div>
@@ -714,18 +716,18 @@ function BatteryReportContent() {
               <div className="flex items-start space-x-3 p-4 bg-orange-50 rounded-lg">
                 <Home className="w-5 h-5 text-orange-600 mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Backup Power</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-semibold text-midnight-blue">Backup Power</h3>
+                  <p className="text-sm text-serious-gray">
                     {reportData.recommendations.batterySize} provides ~12 hours backup for essential loads
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start space-x-3 p-4 bg-batteryGreen-50 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-batteryGreen-600 mt-0.5" />
+              <div className="flex items-start space-x-3 p-4 bg-battery-green/10 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-battery-green mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">System Cost</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-semibold text-midnight-blue">System Cost</h3>
+                  <p className="text-sm text-serious-gray">
                     Est. ${reportData.calculations.systemCost} installed (before ${reportData.calculations.totalRebates} rebates)
                   </p>
                 </div>
@@ -736,7 +738,7 @@ function BatteryReportContent() {
 
         {/* Home Value Impact */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+          <h2 className="text-2xl font-bold text-midnight-blue mb-6 flex items-center">
             <Home className="w-6 h-6 mr-2 text-blue-600" />
             Home Value & Resale Benefits
           </h2>
@@ -744,14 +746,14 @@ function BatteryReportContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="p-4 bg-blue-50 rounded-lg">
-                <h3 className="font-semibold text-gray-900 mb-2">Property Value Increase</h3>
+                <h3 className="font-semibold text-midnight-blue mb-2">Property Value Increase</h3>
                 <div className="flex items-center space-x-2">
                   <TrendingUp className="w-5 h-5 text-blue-600" />
                   <span className="text-2xl font-bold text-blue-600">
                     3-5%
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 mt-2">
+                <p className="text-sm text-serious-gray mt-2">
                   Australian research shows solar systems typically increase property value by 3-5%
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
@@ -760,17 +762,17 @@ function BatteryReportContent() {
               </div>
 
               <div className="p-4 bg-green-50 rounded-lg">
-                <h3 className="font-semibold text-gray-900 mb-2">Market Appeal</h3>
+                <h3 className="font-semibold text-midnight-blue mb-2">Market Appeal</h3>
                 <div className="space-y-2">
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-serious-gray">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                     Premium eco-friendly feature
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-serious-gray">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                     Lower ongoing energy costs for buyers
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-serious-gray">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                     Backup power during outages
                   </div>
@@ -780,8 +782,8 @@ function BatteryReportContent() {
 
             <div className="space-y-4">
               <div className="p-4 bg-orange-50 rounded-lg">
-                <h3 className="font-semibold text-gray-900 mb-2">Buyer Appeal & Market Trends</h3>
-                <p className="text-sm text-gray-600">
+                <h3 className="font-semibold text-midnight-blue mb-2">Buyer Appeal & Market Trends</h3>
+                <p className="text-sm text-serious-gray">
                   81% of buyers consider sustainability features critical when purchasing.
                   Properties with solar typically attract more interest and inquiries.
                 </p>
@@ -791,8 +793,8 @@ function BatteryReportContent() {
               </div>
 
               <div className="p-4 bg-purple-50 rounded-lg">
-                <h3 className="font-semibold text-gray-900 mb-2">Transferable Warranties</h3>
-                <p className="text-sm text-gray-600">
+                <h3 className="font-semibold text-midnight-blue mb-2">Transferable Warranties</h3>
+                <p className="text-sm text-serious-gray">
                   Most battery warranties transfer to new owners, adding significant value
                   proposition when selling your home.
                 </p>
@@ -803,7 +805,7 @@ function BatteryReportContent() {
 
         {/* Post-Installation Tips */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+          <h2 className="text-2xl font-bold text-midnight-blue mb-6 flex items-center">
             <Award className="w-6 h-6 mr-2 text-purple-600" />
             Essential Post-Installation Steps
           </h2>
@@ -822,8 +824,8 @@ function BatteryReportContent() {
                   PRIORITY
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">Notify Your Insurance Company</h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <h3 className="font-semibold text-midnight-blue">Notify Your Insurance Company</h3>
+                  <p className="text-sm text-serious-gray mt-1">
                     Contact your home insurance provider to add your solar/battery system to your policy.
                     Failure to notify may void coverage for system damage.
                   </p>
@@ -840,8 +842,8 @@ function BatteryReportContent() {
               <div className="flex items-start space-x-3 p-4 bg-blue-50 rounded-lg">
                 <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Update Property Records</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-semibold text-midnight-blue">Update Property Records</h3>
+                  <p className="text-sm text-serious-gray">
                     Inform your local council about the installation for accurate property valuations.
                   </p>
                 </div>
@@ -850,8 +852,8 @@ function BatteryReportContent() {
               <div className="flex items-start space-x-3 p-4 bg-green-50 rounded-lg">
                 <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Set Up Monitoring</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-semibold text-midnight-blue">Set Up Monitoring</h3>
+                  <p className="text-sm text-serious-gray">
                     Download your battery manufacturer's app to track performance and optimize usage.
                   </p>
                 </div>
@@ -862,8 +864,8 @@ function BatteryReportContent() {
               <div className="flex items-start space-x-3 p-4 bg-purple-50 rounded-lg">
                 <CheckCircle className="w-5 h-5 text-purple-600 mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Register Warranties</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-semibold text-midnight-blue">Register Warranties</h3>
+                  <p className="text-sm text-serious-gray">
                     Register your system with manufacturers within 30 days to activate full warranty coverage.
                   </p>
                 </div>
@@ -872,18 +874,18 @@ function BatteryReportContent() {
               <div className="flex items-start space-x-3 p-4 bg-orange-50 rounded-lg">
                 <CheckCircle className="w-5 h-5 text-orange-600 mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Schedule First Service</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-semibold text-midnight-blue">Schedule First Service</h3>
+                  <p className="text-sm text-serious-gray">
                     Book your first maintenance check for 6 months post-installation to ensure optimal performance.
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-gray-600 mt-0.5" />
+                <CheckCircle className="w-5 h-5 text-serious-gray mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Keep All Documentation</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-semibold text-midnight-blue">Keep All Documentation</h3>
+                  <p className="text-sm text-serious-gray">
                     Store installation certificates, warranties, and compliance certificates safely -
                     you'll need them for insurance claims and when selling your home.
                   </p>
@@ -893,8 +895,8 @@ function BatteryReportContent() {
           </div>
 
           <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg">
-            <h3 className="font-semibold text-gray-900 mb-2">💡 Pro Tip: Document Everything</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="font-semibold text-midnight-blue mb-2">💡 Pro Tip: Document Everything</h3>
+            <p className="text-sm text-serious-gray">
               Take photos of your system installation, keep all paperwork organized, and maintain
               a log of performance data. This documentation protects your investment and helps with
               warranty claims or future troubleshooting.
@@ -903,23 +905,23 @@ function BatteryReportContent() {
         </div>
 
         {/* Next Steps */}
-        <div className="bg-gradient-to-r from-batteryGreen-600 to-solarYellow-600 rounded-2xl p-8 text-white text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Start Saving? 🚀</h2>
-          <p className="text-xl mb-6 opacity-90">
-            Get connected with certified installers in your area and secure your rebates
+        <div className="bg-gradient-to-r from-battery-green to-electric-yellow rounded-2xl p-8 text-white text-center">
+          <h2 className="text-3xl font-heading font-bold mb-4">{BRAND_VOICE.ctaCopy.getStarted} 🚀</h2>
+          <p className="text-xl font-body mb-6 opacity-90">
+            Get connected with certified installers in your area and secure your rebates. Government money feels different, doesn't it?
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-white text-batteryGreen-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-all">
-              Find Local Installers
+            <button className="bg-white text-battery-green px-8 py-3 rounded-lg font-heading font-semibold hover:bg-whisper-gray transition-all transform hover:scale-105">
+              {BRAND_VOICE.ctaCopy.findInstallers}
             </button>
-            <button className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-batteryGreen-600 transition-all">
-              Download PDF Report
+            <button className="border-2 border-white text-white px-8 py-3 rounded-lg font-heading font-semibold hover:bg-white hover:text-battery-green transition-all transform hover:scale-105">
+              {BRAND_VOICE.ctaCopy.downloadReport}
             </button>
           </div>
         </div>
 
         {/* Fine Print */}
-        <div className="mt-8 text-center text-sm text-gray-500">
+        <div className="mt-8 text-center text-sm text-chat-gray font-body">
           <p>
             Report generated on {new Date().toLocaleDateString()} |
             Based on current DMO/VDO tariffs and federal rebate programs |
@@ -933,7 +935,7 @@ function BatteryReportContent() {
 
 export default function BatteryReportPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-100 flex items-center justify-center"><div className="text-center"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-batteryGreen-600 mx-auto"></div><p className="mt-4 text-gray-600">Loading your personalized report...</p></div></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-morning-sky to-whisper-gray flex items-center justify-center"><div className="text-center"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-battery-green mx-auto"></div><p className="mt-4 text-serious-gray font-body">Loading your personalized report...</p></div></div>}>
       <BatteryReportContent />
     </Suspense>
   )

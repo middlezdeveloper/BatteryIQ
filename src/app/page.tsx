@@ -1,5 +1,6 @@
 import GridStatus from '@/components/GridStatus'
 import { BRAND_VOICE } from '@/lib/brand'
+import { BatteryIQLogo } from '@/components/ui/BatteryIQLogo'
 
 export default function Home() {
   return (
@@ -7,17 +8,17 @@ export default function Home() {
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 bg-gradient-to-br from-battery-green to-electric-yellow rounded-lg flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-lg">⚡</span>
-            </div>
-            <span className="text-2xl font-heading font-bold text-midnight-blue">BatteryIQ</span>
-          </div>
+          <BatteryIQLogo
+            size={40}
+            animated={false}
+            clickable={true}
+            showText={true}
+          />
           <nav className="hidden md:flex space-x-8">
             <a href="/calculator" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Calculator</a>
+            <a href="/grid-status" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Grid Status</a>
             <a href="#rebates" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Rebates</a>
             <a href="#guides" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Guides</a>
-            <a href="#installers" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Installers</a>
           </nav>
         </div>
       </header>
@@ -26,14 +27,15 @@ export default function Home() {
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-5xl md:text-7xl font-heading font-bold text-midnight-blue mb-6 tracking-tight">
-            Make Energy Storage
-            <span className="text-battery-green"> Delightfully</span>
+            Outsmart The <span className="text-battery-green">Energy
+            Market</span>
             <br />
-            <span className="text-electric-yellow">Unexpected</span>
+            <span className="text-trust-navy">Together</span>
           </h1>
           <p className="text-xl md:text-2xl text-serious-gray mb-8 max-w-4xl mx-auto font-body leading-relaxed">
-            We're not building another boring energy calculator. Think <strong>Oatly's irreverent honesty</strong> meets <strong>Tesla's sleek tech</strong>,
-            wrapped in Australian humor. Because paying for sunshine feels wrong.
+            Save money AND the planet? It's almost too good to be true. Almost.
+            <br />
+            <strong>We crunched 47 billion calculations so you don't have to. You're welcome.</strong>
           </p>
 
           {/* Playful Rebate Highlight */}
@@ -67,7 +69,7 @@ export default function Home() {
             Live Australian Grid Status
           </h2>
           <div className="max-w-4xl mx-auto">
-            <GridStatus state="NSW" />
+            <GridStatus autoDetectLocation={true} />
           </div>
         </div>
       </section>

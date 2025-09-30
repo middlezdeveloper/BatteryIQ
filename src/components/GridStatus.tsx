@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Battery, Zap, Leaf, AlertTriangle } from 'lucide-react'
+import { Battery, Zap, Leaf, AlertTriangle, MapPin } from 'lucide-react'
+import PieChart from '@/components/ui/PieChart'
 
 interface GridMixData {
   region: string
@@ -29,19 +30,61 @@ interface GridMixData {
 interface GridStatusProps {
   state?: string
   compact?: boolean
+  autoDetectLocation?: boolean
 }
 
-export default function GridStatus({ state = 'NSW', compact = false }: GridStatusProps) {
+interface LocationData {
+  state: string
+  city: string
+  region: string
+}
+
+export default function GridStatus({
+  state,
+  compact = false,
+  autoDetectLocation = true
+}: GridStatusProps) {
   const [gridData, setGridData] = useState<GridMixData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [detectedLocation, setDetectedLocation] = useState<LocationData | null>(null)
+  const [currentState, setCurrentState] = useState<string>(state || 'VIC')
+
+  // Detect user location on mount
+  useEffect(() => {
+    const detectLocation = async () => {
+      if (!autoDetectLocation || state) {
+        // Skip detection if autoDetect is disabled or state is explicitly provided
+        return
+      }
+
+      try {
+        const response = await fetch('/api/location')
+        if (response.ok) {
+          const locationData = await response.json()
+          if (locationData.success && locationData.isAustralian) {
+            setDetectedLocation({
+              state: locationData.location.state,
+              city: locationData.location.city,
+              region: locationData.location.region
+            })
+            setCurrentState(locationData.location.state)
+          }
+        }
+      } catch (err) {
+        console.log('Location detection failed, using default VIC')
+      }
+    }
+
+    detectLocation()
+  }, [autoDetectLocation, state])
 
   useEffect(() => {
     const fetchGridData = async () => {
       try {
         setLoading(true)
-        const response = await fetch(`/api/grid?state=${state}`)
+        const response = await fetch(`/api/grid?state=${currentState}`)
 
         if (!response.ok) {
           throw new Error('Failed to fetch grid data')
@@ -63,12 +106,12 @@ export default function GridStatus({ state = 'NSW', compact = false }: GridStatu
     const interval = setInterval(fetchGridData, 5 * 60 * 1000)
 
     return () => clearInterval(interval)
-  }, [state])
+  }, [currentState])
 
   const getActionIcon = (action: string) => {
     switch (action) {
       case 'charge':
-        return <Battery className="w-4 h-4 text-batteryGreen-600" />
+        return <Battery className="w-4 h-4 text-battery-green" />
       case 'discharge':
         return <Zap className="w-4 h-4 text-yellow-600" />
       default:
@@ -77,7 +120,7 @@ export default function GridStatus({ state = 'NSW', compact = false }: GridStatu
   }
 
   const getActionColor = (action: string, priority: string) => {
-    if (action === 'charge') return 'text-batteryGreen-600 bg-batteryGreen-50'
+    if (action === 'charge') return 'text-battery-green bg-battery-green/10'
     if (action === 'discharge' && priority === 'high') return 'text-red-600 bg-red-50'
     if (action === 'discharge') return 'text-yellow-600 bg-yellow-50'
     return 'text-gray-600 bg-gray-50'
@@ -137,16 +180,25 @@ export default function GridStatus({ state = 'NSW', compact = false }: GridStatu
     <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <div className="p-2 bg-batteryGreen-100 rounded-lg">
-            <Leaf className="w-5 h-5 text-batteryGreen-600" />
+          <div className="p-2 bg-battery-green/10 rounded-lg">
+            <Leaf className="w-5 h-5 text-battery-green" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-gray-900">
               {gridData.region} Grid Status
             </h3>
-            <p className="text-sm text-gray-500">
-              Live data from AEMO
-            </p>
+            <div className="flex items-center space-x-2 text-sm text-gray-500">
+              <span>Live data from AEMO</span>
+              {detectedLocation && (
+                <>
+                  <span>•</span>
+                  <div className="flex items-center space-x-1">
+                    <MapPin className="w-3 h-3" />
+                    <span>Detected: {detectedLocation.city}, {detectedLocation.state}</span>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
         {lastUpdated && (
@@ -159,7 +211,7 @@ export default function GridStatus({ state = 'NSW', compact = false }: GridStatu
       {/* Key Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="text-center p-3 bg-gray-50 rounded-lg">
-          <p className="text-2xl font-bold text-batteryGreen-600">
+          <p className="text-2xl font-bold text-battery-green">
             {gridData.renewableShare}%
           </p>
           <p className="text-xs text-gray-600">Renewable</p>
@@ -187,7 +239,7 @@ export default function GridStatus({ state = 'NSW', compact = false }: GridStatu
       {/* Recommendation */}
       <div className={`p-4 rounded-lg border-l-4 ${
         gridData.recommendation.action === 'charge'
-          ? 'bg-batteryGreen-50 border-batteryGreen-500'
+          ? 'bg-battery-green/10 border-battery-green'
           : gridData.recommendation.action === 'discharge'
           ? 'bg-yellow-50 border-yellow-500'
           : 'bg-gray-50 border-gray-500'
@@ -205,46 +257,32 @@ export default function GridStatus({ state = 'NSW', compact = false }: GridStatu
         </div>
       </div>
 
-      {/* Generation Mix */}
+      {/* Generation Mix - Pie Chart */}
       <div className="mt-6">
-        <h4 className="text-sm font-medium text-gray-900 mb-3">
+        <h4 className="text-sm font-medium text-gray-900 mb-4">
           Generation Mix ({Math.round(gridData.totalDemand)} MW)
         </h4>
-        <div className="space-y-2">
-          {Object.entries(gridData.fueltechBreakdown)
-            .filter(([_, value]) => value > 0)
-            .sort(([, a], [, b]) => b - a)
-            .map(([fuel, mw]) => {
-              const percentage = (mw / gridData.totalDemand) * 100
-              const color = {
-                coal: 'bg-gray-800',
-                gas: 'bg-blue-500',
-                wind: 'bg-green-500',
-                solar: 'bg-yellow-500',
-                hydro: 'bg-blue-300',
-                battery: 'bg-purple-500',
-                other: 'bg-gray-400'
-              }[fuel] || 'bg-gray-300'
-
-              return (
-                <div key={fuel} className="flex items-center space-x-3">
-                  <div className="flex-1">
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="capitalize text-gray-600">{fuel}</span>
-                      <span className="text-gray-500">
-                        {mw} MW ({percentage.toFixed(1)}%)
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full ${color}`}
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+        <div className="flex justify-center">
+          <PieChart
+            data={Object.entries(gridData.fueltechBreakdown)
+              .filter(([_, value]) => value > 0)
+              .map(([fuel, mw]) => ({
+                label: fuel,
+                value: mw,
+                mw: Math.round(mw),
+                color: {
+                  coal: '#374151',      // gray-700
+                  gas: '#3B82F6',       // blue-500
+                  wind: '#10B981',      // emerald-500
+                  solar: '#F59E0B',     // amber-500
+                  hydro: '#06B6D4',     // cyan-500
+                  battery: '#8B5CF6',   // violet-500
+                  other: '#6B7280'      // gray-500
+                }[fuel] || '#9CA3AF'
+              }))}
+            size={240}
+            className="mx-auto"
+          />
         </div>
       </div>
     </div>

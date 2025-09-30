@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { MapPin, Users, Zap, Home, TrendingUp, Battery, Leaf, DollarSign } from 'lucide-react'
+import { BRAND_VOICE, getRandomLoadingMessage } from '@/lib/brand'
+import { BatteryIQLogo } from '@/components/ui/BatteryIQLogo'
 
 // Types for calculator state
 interface CalculatorState {
@@ -129,7 +131,7 @@ export default function BatteryCalculator() {
           `Based on ${tariffData.comparison?.length || 0} local tariffs` :
           `Average for ${state.postcode} area`,
         emoji: tariffData ? "🎯" : "💰",
-        color: "text-batteryGreen-600"
+        color: "text-battery-green"
       })
     }
 
@@ -163,7 +165,7 @@ export default function BatteryCalculator() {
         value: motivationText,
         subtitle: "We'll optimise for what matters to you",
         emoji: "🎯",
-        color: "text-batteryGreen-600"
+        color: "text-battery-green"
       })
     }
 
@@ -176,7 +178,7 @@ export default function BatteryCalculator() {
         value: `$${potentialSavings}/year`,
         subtitle: `From your $${annualBill} annual bill`,
         emoji: "📉",
-        color: "text-batteryGreen-600"
+        color: "text-battery-green"
       })
     }
 
@@ -194,7 +196,7 @@ export default function BatteryCalculator() {
         value: `+${batteryBoost} kWh/year`,
         subtitle: subtitle,
         emoji: solarData ? "🔥" : "⚡",
-        color: "text-solarYellow-600"
+        color: "text-electric-yellow"
       })
     }
 
@@ -212,7 +214,7 @@ export default function BatteryCalculator() {
         value: arbitrageValue,
         subtitle: subtitle,
         emoji: "💎",
-        color: "text-batteryGreen-600"
+        color: "text-battery-green"
       })
     }
 
@@ -234,7 +236,7 @@ export default function BatteryCalculator() {
         value: `$${federalRebate}`,
         subtitle: "Your report will include rebate application steps",
         emoji: "🎯",
-        color: "text-batteryGreen-600"
+        color: "text-battery-green"
       })
     }
 
@@ -251,10 +253,15 @@ export default function BatteryCalculator() {
   const progress = (stage / totalStages) * 100
 
   // Stage navigation
-  const nextStage = () => {
+  const nextStage = async () => {
     if (stage < totalStages) {
+      setIsLoading(true)
+
+      // Brief delay to show the thinking animation
+      await new Promise(resolve => setTimeout(resolve, 800))
+
       setStage(stage + 1)
-      generateInsights()
+      await generateInsights()
     }
   }
 
@@ -266,31 +273,45 @@ export default function BatteryCalculator() {
 
   // Render insight popup
   const InsightPopup = ({ insight }: { insight: InsightData }) => (
-    <div className={`fixed top-4 right-4 z-50 p-4 bg-white rounded-lg shadow-lg border-l-4 border-batteryGreen-500 transform transition-all duration-500 ${
+    <div className={`fixed top-4 right-4 z-50 p-4 bg-white rounded-lg shadow-lg border-l-4 border-battery-green transform transition-all duration-500 ${
       showInsight ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
     }`}>
       <div className="flex items-start space-x-3">
         <span className="text-2xl">{insight.emoji}</span>
         <div>
-          <h3 className="font-semibold text-gray-900">{insight.title}</h3>
+          <h3 className="font-semibold text-midnight-blue">{insight.title}</h3>
           <p className={`text-lg font-bold ${insight.color}`}>{insight.value}</p>
-          <p className="text-sm text-gray-600">{insight.subtitle}</p>
+          <p className="text-sm text-serious-gray">{insight.subtitle}</p>
         </div>
       </div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-batteryGreen-50 to-solarYellow-50 p-4">
-      {/* Progress Bar */}
-      <div className="max-w-4xl mx-auto mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-gray-600">Progress</span>
-          <span className="text-sm text-gray-600">{stage} of {totalStages}</span>
+    <div className="min-h-screen bg-gradient-to-br from-morning-sky to-whisper-gray">
+      {/* Header */}
+      <header className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <BatteryIQLogo
+            size={32}
+            animated={false}
+            clickable={true}
+            showText={true}
+          />
+          <span className="text-sm text-serious-gray">Battery Calculator</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+      </header>
+
+      <div className="p-4">
+        {/* Progress Bar */}
+        <div className="max-w-4xl mx-auto mb-8">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-serious-gray">Progress</span>
+          <span className="text-sm text-serious-gray">{stage} of {totalStages}</span>
+        </div>
+        <div className="w-full bg-chat-gray rounded-full h-2">
           <div
-            className="bg-gradient-to-r from-batteryGreen-500 to-batteryGreen-600 h-2 rounded-full transition-all duration-300"
+            className="bg-gradient-to-r from-battery-green to-money-green h-2 rounded-full transition-all duration-300"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -304,19 +325,19 @@ export default function BatteryCalculator() {
           {stage === 1 && (
             <div className="p-8">
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                  Let's find your perfect battery setup! ⚡
+                <h2 className="text-3xl font-heading font-bold text-midnight-blue mb-2">
+                  {BRAND_VOICE.interactionMessages.postcodeEntry}
                 </h2>
-                <p className="text-lg text-gray-600">
-                  Just a few quick questions to get started...
+                <p className="text-lg text-serious-gray font-body">
+                  {BRAND_VOICE.motivationalCopy.batteryBenefits}
                 </p>
               </div>
 
               <div className="space-y-6">
                 {/* Postcode */}
                 <div>
-                  <label className="flex items-center text-lg font-semibold text-gray-900 mb-3">
-                    <MapPin className="w-5 h-5 mr-2 text-batteryGreen-600" />
+                  <label className="flex items-center text-lg font-heading font-semibold text-midnight-blue mb-3">
+                    <MapPin className="w-5 h-5 mr-2 text-battery-green" />
                     What's your postcode?
                   </label>
                   <input
@@ -324,11 +345,11 @@ export default function BatteryCalculator() {
                     value={state.postcode}
                     onChange={(e) => updateState({ postcode: e.target.value })}
                     placeholder="e.g. 2000"
-                    className="w-full p-4 border border-gray-200 rounded-lg text-lg focus:ring-2 focus:ring-batteryGreen-500 focus:border-transparent"
+                    className="w-full p-4 border border-chat-gray rounded-lg text-lg focus:ring-2 focus:ring-battery-green focus:border-transparent"
                     maxLength={4}
                   />
                   {state.postcode && state.postcode.length === 4 && (
-                    <p className="mt-2 text-sm text-batteryGreen-600 flex items-center">
+                    <p className="mt-2 text-sm text-battery-green flex items-center">
                       <Zap className="w-4 h-4 mr-1" />
                       Great! We'll tailor everything to your area
                     </p>
@@ -337,8 +358,8 @@ export default function BatteryCalculator() {
 
                 {/* Household Size */}
                 <div>
-                  <label className="flex items-center text-lg font-semibold text-gray-900 mb-3">
-                    <Users className="w-5 h-5 mr-2 text-batteryGreen-600" />
+                  <label className="flex items-center text-lg font-semibold text-midnight-blue mb-3">
+                    <Users className="w-5 h-5 mr-2 text-battery-green" />
                     How many people live in your home?
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -348,8 +369,8 @@ export default function BatteryCalculator() {
                         onClick={() => updateState({ householdSize: typeof size === 'number' ? size : 5 })}
                         className={`p-4 border-2 rounded-lg text-lg font-semibold transition-all ${
                           state.householdSize === (typeof size === 'number' ? size : 5)
-                            ? 'border-batteryGreen-500 bg-batteryGreen-50 text-batteryGreen-700'
-                            : 'border-gray-200 hover:border-batteryGreen-300'
+                            ? 'border-battery-green bg-battery-green/10 text-battery-green'
+                            : 'border-chat-gray hover:border-batteryGreen-300'
                         }`}
                       >
                         {size}
@@ -364,9 +385,9 @@ export default function BatteryCalculator() {
                 <button
                   onClick={nextStage}
                   disabled={!state.postcode || state.postcode.length !== 4 || !state.householdSize}
-                  className="bg-batteryGreen-600 hover:bg-batteryGreen-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-8 py-4 rounded-lg text-lg font-semibold transition-all"
+                  className="bg-battery-green hover:bg-battery-green disabled:bg-chat-gray disabled:cursor-not-allowed text-white px-8 py-4 rounded-lg text-lg font-semibold transition-all"
                 >
-                  Show me what's possible! →
+                  {BRAND_VOICE.ctaCopy.calculateSavings} →
                 </button>
               </div>
             </div>
@@ -376,10 +397,10 @@ export default function BatteryCalculator() {
           {stage === 2 && (
             <div className="p-8">
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                <h2 className="text-3xl font-bold text-midnight-blue mb-2">
                   What matters most to you? 🎯
                 </h2>
-                <p className="text-lg text-gray-600">
+                <p className="text-lg text-serious-gray">
                   We'll optimize your setup based on your priorities
                 </p>
               </div>
@@ -387,7 +408,7 @@ export default function BatteryCalculator() {
               <div className="space-y-6">
                 {/* Motivation */}
                 <div>
-                  <label className="text-lg font-semibold text-gray-900 mb-4 block">
+                  <label className="text-lg font-semibold text-midnight-blue mb-4 block">
                     Why are you interested in a battery? (Choose all that apply)
                   </label>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -411,14 +432,14 @@ export default function BatteryCalculator() {
                           className={`p-6 border-2 rounded-xl text-center transition-all ${
                             isSelected
                               ? `border-${option.color}-500 bg-${option.color}-50`
-                              : 'border-gray-200 hover:border-gray-300'
+                              : 'border-chat-gray hover:border-gray-300'
                           }`}
                         >
                           <Icon className={`w-8 h-8 mx-auto mb-3 ${
                             isSelected ? `text-${option.color}-600` : 'text-gray-400'
                           }`} />
                           <p className={`font-semibold ${
-                            isSelected ? `text-${option.color}-700` : 'text-gray-600'
+                            isSelected ? `text-${option.color}-700` : 'text-serious-gray'
                           }`}>
                             {option.label}
                           </p>
@@ -430,13 +451,13 @@ export default function BatteryCalculator() {
 
                 {/* Current Provider */}
                 <div>
-                  <label className="text-lg font-semibold text-gray-900 mb-3 block">
+                  <label className="text-lg font-semibold text-midnight-blue mb-3 block">
                     Who's your current energy provider?
                   </label>
                   <select
                     value={state.currentProvider}
                     onChange={(e) => updateState({ currentProvider: e.target.value })}
-                    className="w-full p-4 border border-gray-200 rounded-lg text-lg focus:ring-2 focus:ring-batteryGreen-500 focus:border-transparent"
+                    className="w-full p-4 border border-chat-gray rounded-lg text-lg focus:ring-2 focus:ring-battery-green focus:border-transparent"
                   >
                     <option value="">Select your provider...</option>
                     <option value="AGL">AGL</option>
@@ -451,7 +472,7 @@ export default function BatteryCalculator() {
 
                 {/* Solar Status */}
                 <div>
-                  <label className="text-lg font-semibold text-gray-900 mb-3 block">
+                  <label className="text-lg font-semibold text-midnight-blue mb-3 block">
                     Do you currently have solar panels?
                   </label>
                   <div className="grid grid-cols-2 gap-4">
@@ -459,8 +480,8 @@ export default function BatteryCalculator() {
                       onClick={() => updateState({ hasSolar: true })}
                       className={`p-4 border-2 rounded-lg text-center transition-all ${
                         state.hasSolar === true
-                          ? 'border-solarYellow-500 bg-solarYellow-50 text-solarYellow-700'
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-electric-yellow bg-electric-yellow/10 text-electric-yellow'
+                          : 'border-chat-gray hover:border-gray-300'
                       }`}
                     >
                       <span className="text-2xl block mb-2">☀️</span>
@@ -470,8 +491,8 @@ export default function BatteryCalculator() {
                       onClick={() => updateState({ hasSolar: false })}
                       className={`p-4 border-2 rounded-lg text-center transition-all ${
                         state.hasSolar === false
-                          ? 'border-batteryGreen-500 bg-batteryGreen-50 text-batteryGreen-700'
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-battery-green bg-battery-green/10 text-battery-green'
+                          : 'border-chat-gray hover:border-gray-300'
                       }`}
                     >
                       <span className="text-2xl block mb-2">🏠</span>
@@ -482,7 +503,7 @@ export default function BatteryCalculator() {
 
                 {/* EV Status */}
                 <div>
-                  <label className="text-lg font-semibold text-gray-900 mb-3 block">
+                  <label className="text-lg font-semibold text-midnight-blue mb-3 block">
                     Electric vehicle situation?
                   </label>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -491,48 +512,48 @@ export default function BatteryCalculator() {
                       className={`p-4 border-2 rounded-lg text-center transition-all ${
                         state.hasEV === true
                           ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 hover:border-gray-300'
+                          : 'border-chat-gray hover:border-gray-300'
                       }`}
                     >
                       <span className="text-2xl block mb-2">🚗</span>
                       <span className="font-semibold">Have EV now</span>
-                      <p className="text-xs text-gray-600 mt-1">Access to EV tariffs</p>
+                      <p className="text-xs text-serious-gray mt-1">Access to EV tariffs</p>
                     </button>
                     <button
                       onClick={() => updateState({ hasEV: false, planningEV: true, evTimeframe: '12months' })}
                       className={`p-4 border-2 rounded-lg text-center transition-all ${
                         state.evTimeframe === '12months'
                           ? 'border-green-500 bg-green-50 text-green-700'
-                          : 'border-gray-200 hover:border-gray-300'
+                          : 'border-chat-gray hover:border-gray-300'
                       }`}
                     >
                       <span className="text-2xl block mb-2">🎯</span>
                       <span className="font-semibold">EV within 12 months</span>
-                      <p className="text-xs text-gray-600 mt-1">Novated lease ready</p>
+                      <p className="text-xs text-serious-gray mt-1">Novated lease ready</p>
                     </button>
                     <button
                       onClick={() => updateState({ hasEV: false, planningEV: true, evTimeframe: '3-5years' })}
                       className={`p-4 border-2 rounded-lg text-center transition-all ${
                         state.evTimeframe === '3-5years'
                           ? 'border-purple-500 bg-purple-50 text-purple-700'
-                          : 'border-gray-200 hover:border-gray-300'
+                          : 'border-chat-gray hover:border-gray-300'
                       }`}
                     >
                       <span className="text-2xl block mb-2">🔮</span>
                       <span className="font-semibold">Planning EV (3-5 years)</span>
-                      <p className="text-xs text-gray-600 mt-1">Future-proof setup</p>
+                      <p className="text-xs text-serious-gray mt-1">Future-proof setup</p>
                     </button>
                     <button
                       onClick={() => updateState({ hasEV: false, planningEV: false, evTimeframe: 'none' })}
                       className={`p-4 border-2 rounded-lg text-center transition-all ${
                         state.evTimeframe === 'none'
                           ? 'border-gray-500 bg-gray-50 text-gray-700'
-                          : 'border-gray-200 hover:border-gray-300'
+                          : 'border-chat-gray hover:border-gray-300'
                       }`}
                     >
                       <span className="text-2xl block mb-2">⛽</span>
                       <span className="font-semibold">No EV plans</span>
-                      <p className="text-xs text-gray-600 mt-1">Standard tariffs</p>
+                      <p className="text-xs text-serious-gray mt-1">Standard tariffs</p>
                     </button>
                   </div>
                 </div>
@@ -542,14 +563,14 @@ export default function BatteryCalculator() {
               <div className="mt-8 flex justify-between">
                 <button
                   onClick={prevStage}
-                  className="text-batteryGreen-600 hover:text-batteryGreen-700 px-4 py-2 font-semibold"
+                  className="text-battery-green hover:text-battery-green px-4 py-2 font-semibold"
                 >
                   ← Back
                 </button>
                 <button
                   onClick={nextStage}
                   disabled={state.motivation.length === 0 || !state.currentProvider}
-                  className="bg-batteryGreen-600 hover:bg-batteryGreen-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-8 py-4 rounded-lg text-lg font-semibold transition-all"
+                  className="bg-battery-green hover:bg-battery-green disabled:bg-chat-gray disabled:cursor-not-allowed text-white px-8 py-4 rounded-lg text-lg font-semibold transition-all"
                 >
                   Let's get technical! →
                 </button>
@@ -561,10 +582,10 @@ export default function BatteryCalculator() {
           {stage === 3 && (
             <div className="p-8">
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                <h2 className="text-3xl font-bold text-midnight-blue mb-2">
                   Let's crunch some numbers! 📊
                 </h2>
-                <p className="text-lg text-gray-600">
+                <p className="text-lg text-serious-gray">
                   This helps us calculate your exact savings potential
                 </p>
               </div>
@@ -572,8 +593,8 @@ export default function BatteryCalculator() {
               <div className="space-y-6">
                 {/* Quarterly Bill */}
                 <div>
-                  <label className="flex items-center text-lg font-semibold text-gray-900 mb-3">
-                    <DollarSign className="w-5 h-5 mr-2 text-batteryGreen-600" />
+                  <label className="flex items-center text-lg font-semibold text-midnight-blue mb-3">
+                    <DollarSign className="w-5 h-5 mr-2 text-battery-green" />
                     What's your quarterly electricity bill?
                   </label>
                   <div className="relative">
@@ -583,13 +604,13 @@ export default function BatteryCalculator() {
                       value={state.quarterlyBill || ''}
                       onChange={(e) => updateState({ quarterlyBill: parseFloat(e.target.value) || 0 })}
                       placeholder="450"
-                      className="w-full pl-8 pr-4 py-4 border border-gray-200 rounded-lg text-lg focus:ring-2 focus:ring-batteryGreen-500 focus:border-transparent"
+                      className="w-full pl-8 pr-4 py-4 border border-chat-gray rounded-lg text-lg focus:ring-2 focus:ring-battery-green focus:border-transparent"
                       min="0"
                       step="10"
                     />
                   </div>
                   {state.quarterlyBill > 0 && (
-                    <p className="mt-2 text-sm text-batteryGreen-600 flex items-center">
+                    <p className="mt-2 text-sm text-battery-green flex items-center">
                       <TrendingUp className="w-4 h-4 mr-1" />
                       That's ${state.quarterlyBill * 4}/year - we can help reduce this!
                     </p>
@@ -599,8 +620,8 @@ export default function BatteryCalculator() {
                 {/* Solar Capacity (if they have solar) */}
                 {state.hasSolar && (
                   <div>
-                    <label className="flex items-center text-lg font-semibold text-gray-900 mb-3">
-                      <Zap className="w-5 h-5 mr-2 text-solarYellow-600" />
+                    <label className="flex items-center text-lg font-semibold text-midnight-blue mb-3">
+                      <Zap className="w-5 h-5 mr-2 text-electric-yellow" />
                       How big is your current solar system?
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -620,8 +641,8 @@ export default function BatteryCalculator() {
                             }}
                             className={`p-4 border-2 rounded-lg text-center font-semibold transition-all ${
                               (state.solarCapacity === numericSize) || (isCustom && (state.solarCapacity || 0) >= 15)
-                                ? 'border-solarYellow-500 bg-solarYellow-50 text-solarYellow-700'
-                                : 'border-gray-200 hover:border-solarYellow-300'
+                                ? 'border-electric-yellow bg-electric-yellow/10 text-electric-yellow'
+                                : 'border-chat-gray hover:border-solarYellow-300'
                             }`}
                           >
                             {size}
@@ -636,7 +657,7 @@ export default function BatteryCalculator() {
                           value={state.solarCapacity || ''}
                           onChange={(e) => updateState({ solarCapacity: parseFloat(e.target.value) || 0 })}
                           placeholder="Enter system size (kW)"
-                          className="w-full p-3 border border-solarYellow-300 rounded-lg focus:ring-2 focus:ring-solarYellow-500 focus:border-transparent"
+                          className="w-full p-3 border border-solarYellow-300 rounded-lg focus:ring-2 focus:ring-electric-yellow focus:border-transparent"
                           step="0.1"
                           min="0"
                         />
@@ -648,7 +669,7 @@ export default function BatteryCalculator() {
 
                 {/* Current Tariff Type */}
                 <div>
-                  <label className="text-lg font-semibold text-gray-900 mb-3 block">
+                  <label className="text-lg font-semibold text-midnight-blue mb-3 block">
                     What type of electricity plan are you on?
                   </label>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -662,13 +683,13 @@ export default function BatteryCalculator() {
                         onClick={() => updateState({ currentTariff: option.id as any })}
                         className={`p-4 border-2 rounded-lg text-center transition-all ${
                           state.currentTariff === option.id
-                            ? 'border-batteryGreen-500 bg-batteryGreen-50 text-batteryGreen-700'
-                            : 'border-gray-200 hover:border-gray-300'
+                            ? 'border-battery-green bg-battery-green/10 text-battery-green'
+                            : 'border-chat-gray hover:border-gray-300'
                         }`}
                       >
                         <span className="text-2xl block mb-2">{option.icon}</span>
                         <p className="font-semibold">{option.label}</p>
-                        <p className="text-sm text-gray-600">{option.desc}</p>
+                        <p className="text-sm text-serious-gray">{option.desc}</p>
                       </button>
                     ))}
                   </div>
@@ -676,8 +697,8 @@ export default function BatteryCalculator() {
 
                 {/* Household Income (for state rebate eligibility) */}
                 <div>
-                  <label className="flex items-center text-lg font-semibold text-gray-900 mb-3">
-                    <DollarSign className="w-5 h-5 mr-2 text-batteryGreen-600" />
+                  <label className="flex items-center text-lg font-semibold text-midnight-blue mb-3">
+                    <DollarSign className="w-5 h-5 mr-2 text-battery-green" />
                     Combined household income (for state rebate eligibility)
                   </label>
 
@@ -718,36 +739,36 @@ export default function BatteryCalculator() {
                               className={`p-4 border-2 rounded-lg text-center transition-all ${
                                 state.householdIncome && state.householdIncome < threshold.limit
                                   ? 'border-green-500 bg-green-50 text-green-700'
-                                  : 'border-gray-200 hover:border-green-300'
+                                  : 'border-chat-gray hover:border-green-300'
                               }`}
                             >
                               <span className="text-2xl block mb-2">✅</span>
                               <p className="font-semibold">Under ${threshold.limit.toLocaleString()}</p>
-                              <p className="text-xs text-gray-600 mt-1">Eligible for state rebate</p>
+                              <p className="text-xs text-serious-gray mt-1">Eligible for state rebate</p>
                             </button>
                             <button
                               onClick={() => updateState({ householdIncome: threshold.limit + 1000 })}
                               className={`p-4 border-2 rounded-lg text-center transition-all ${
                                 state.householdIncome && state.householdIncome >= threshold.limit
                                   ? 'border-red-500 bg-red-50 text-red-700'
-                                  : 'border-gray-200 hover:border-red-300'
+                                  : 'border-chat-gray hover:border-red-300'
                               }`}
                             >
                               <span className="text-2xl block mb-2">❌</span>
                               <p className="font-semibold">Over ${threshold.limit.toLocaleString()}</p>
-                              <p className="text-xs text-gray-600 mt-1">State rebate not available</p>
+                              <p className="text-xs text-serious-gray mt-1">State rebate not available</p>
                             </button>
                             <button
                               onClick={() => updateState({ householdIncome: 999999 })}
                               className={`p-4 border-2 rounded-lg text-center transition-all ${
                                 state.householdIncome === 999999
-                                  ? 'border-batteryGreen-500 bg-batteryGreen-50 text-batteryGreen-700'
-                                  : 'border-gray-200 hover:border-batteryGreen-300'
+                                  ? 'border-battery-green bg-battery-green/10 text-battery-green'
+                                  : 'border-chat-gray hover:border-batteryGreen-300'
                               }`}
                             >
                               <span className="text-2xl block mb-2">🤐</span>
                               <p className="font-semibold">Prefer not to say</p>
-                              <p className="text-xs text-gray-600 mt-1">Still eligible for federal</p>
+                              <p className="text-xs text-serious-gray mt-1">Still eligible for federal</p>
                             </button>
                           </div>
                         ) : (
@@ -789,14 +810,14 @@ export default function BatteryCalculator() {
               <div className="mt-8 flex justify-between">
                 <button
                   onClick={prevStage}
-                  className="text-batteryGreen-600 hover:text-batteryGreen-700 px-4 py-2 font-semibold"
+                  className="text-battery-green hover:text-battery-green px-4 py-2 font-semibold"
                 >
                   ← Back
                 </button>
                 <button
                   onClick={nextStage}
                   disabled={state.quarterlyBill === 0}
-                  className="bg-batteryGreen-600 hover:bg-batteryGreen-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-8 py-4 rounded-lg text-lg font-semibold transition-all"
+                  className="bg-battery-green hover:bg-battery-green disabled:bg-chat-gray disabled:cursor-not-allowed text-white px-8 py-4 rounded-lg text-lg font-semibold transition-all"
                 >
                   Show me my savings! →
                 </button>
@@ -808,10 +829,10 @@ export default function BatteryCalculator() {
           {stage === 4 && (
             <div className="p-8">
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                <h2 className="text-3xl font-bold text-midnight-blue mb-2">
                   You're so close to savings! 🎉
                 </h2>
-                <p className="text-lg text-gray-600">
+                <p className="text-lg text-serious-gray">
                   Just need your details to send your personalized battery report
                 </p>
               </div>
@@ -819,7 +840,7 @@ export default function BatteryCalculator() {
               <div className="space-y-6">
                 {/* Email */}
                 <div>
-                  <label className="flex items-center text-lg font-semibold text-gray-900 mb-3">
+                  <label className="flex items-center text-lg font-semibold text-midnight-blue mb-3">
                     <span className="text-2xl mr-2">📧</span>
                     Email address
                   </label>
@@ -828,16 +849,16 @@ export default function BatteryCalculator() {
                     value={state.email}
                     onChange={(e) => updateState({ email: e.target.value })}
                     placeholder="your.email@example.com"
-                    className="w-full p-4 border border-gray-200 rounded-lg text-lg focus:ring-2 focus:ring-batteryGreen-500 focus:border-transparent"
+                    className="w-full p-4 border border-chat-gray rounded-lg text-lg focus:ring-2 focus:ring-battery-green focus:border-transparent"
                   />
-                  <p className="mt-2 text-sm text-gray-600">
+                  <p className="mt-2 text-sm text-serious-gray">
                     We'll send your detailed savings report and never spam you (promise!) 🤞
                   </p>
                 </div>
 
                 {/* Phone */}
                 <div>
-                  <label className="flex items-center text-lg font-semibold text-gray-900 mb-3">
+                  <label className="flex items-center text-lg font-semibold text-midnight-blue mb-3">
                     <span className="text-2xl mr-2">📱</span>
                     Phone number <span className="text-sm text-gray-500 ml-1">(optional)</span>
                   </label>
@@ -846,37 +867,37 @@ export default function BatteryCalculator() {
                     value={state.phone}
                     onChange={(e) => updateState({ phone: e.target.value })}
                     placeholder="04XX XXX XXX"
-                    className="w-full p-4 border border-gray-200 rounded-lg text-lg focus:ring-2 focus:ring-batteryGreen-500 focus:border-transparent"
+                    className="w-full p-4 border border-chat-gray rounded-lg text-lg focus:ring-2 focus:ring-battery-green focus:border-transparent"
                   />
-                  <p className="mt-2 text-sm text-gray-600">
+                  <p className="mt-2 text-sm text-serious-gray">
                     For a quick call from our battery experts (only if you want it)
                   </p>
                 </div>
 
                 {/* Quick Results Preview */}
-                <div className="bg-gradient-to-r from-batteryGreen-50 to-solarYellow-50 p-6 rounded-xl border">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">Your preliminary results 👀</h3>
+                <div className="bg-gradient-to-r from-battery-green/10 to-electric-yellow/10 p-6 rounded-xl border">
+                  <h3 className="text-xl font-bold text-midnight-blue mb-4">Your preliminary results 👀</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-batteryGreen-600">
+                      <p className="text-2xl font-bold text-battery-green">
                         ${Math.round((state.quarterlyBill * 4) * 0.25)}/year
                       </p>
-                      <p className="text-sm text-gray-600">Potential savings</p>
+                      <p className="text-sm text-serious-gray">Potential savings</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-solarYellow-600">
+                      <p className="text-2xl font-bold text-electric-yellow">
                         ${Math.round(4650 - (state.quarterlyBill * 0.1))}
                       </p>
-                      <p className="text-sm text-gray-600">With federal rebate</p>
+                      <p className="text-sm text-serious-gray">With federal rebate</p>
                     </div>
                     <div className="text-center">
                       <p className="text-2xl font-bold text-orange-600">
                         {Math.round(state.householdSize * 2.4)}t CO₂
                       </p>
-                      <p className="text-sm text-gray-600">Annual reduction</p>
+                      <p className="text-sm text-serious-gray">Annual reduction</p>
                     </div>
                   </div>
-                  <p className="text-center mt-4 text-sm text-gray-600">
+                  <p className="text-center mt-4 text-sm text-serious-gray">
                     Full detailed report coming to your inbox! 📨
                   </p>
                 </div>
@@ -886,7 +907,7 @@ export default function BatteryCalculator() {
               <div className="mt-8 flex justify-between">
                 <button
                   onClick={prevStage}
-                  className="text-batteryGreen-600 hover:text-batteryGreen-700 px-4 py-2 font-semibold"
+                  className="text-battery-green hover:text-battery-green px-4 py-2 font-semibold"
                 >
                   ← Back
                 </button>
@@ -902,9 +923,9 @@ export default function BatteryCalculator() {
                     window.location.href = `/report?data=${reportData}`
                   }}
                   disabled={!state.email}
-                  className="bg-gradient-to-r from-batteryGreen-600 to-solarYellow-600 hover:from-batteryGreen-700 hover:to-solarYellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-8 py-4 rounded-lg text-lg font-semibold transition-all"
+                  className="bg-gradient-to-r from-battery-green to-electric-yellow hover:from-battery-green hover:to-electric-yellow disabled:bg-chat-gray disabled:cursor-not-allowed text-white px-8 py-4 rounded-lg text-lg font-semibold transition-all"
                 >
-                  Get My Battery Report! 🚀
+                  {BRAND_VOICE.ctaCopy.downloadReport} 🚀
                 </button>
               </div>
             </div>
@@ -913,20 +934,27 @@ export default function BatteryCalculator() {
         </div>
       </div>
 
-      {/* Insight Popup */}
-      {insights.length > 0 && insights.map((insight, index) => (
-        <InsightPopup key={index} insight={insight} />
-      ))}
+        {/* Insight Popup */}
+        {insights.length > 0 && insights.map((insight, index) => (
+          <InsightPopup key={index} insight={insight} />
+        ))}
 
-      {/* Loading Overlay */}
-      {isLoading && (
-        <div className="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl">
-            <div className="animate-spin w-8 h-8 border-4 border-batteryGreen-200 border-t-batteryGreen-600 rounded-full mx-auto mb-4"></div>
-            <p className="text-gray-600">Crunching the numbers...</p>
+        {/* Loading Overlay */}
+        {isLoading && (
+          <div className="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-50">
+            <div className="bg-white p-8 rounded-xl shadow-xl">
+              <div className="mb-4 flex justify-center">
+                <BatteryIQLogo
+                  size={64}
+                  animated={true}
+                  clickable={false}
+                />
+              </div>
+              <p className="text-serious-gray font-body text-center">{getRandomLoadingMessage()}</p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
