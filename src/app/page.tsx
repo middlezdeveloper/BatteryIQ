@@ -9,7 +9,7 @@ export default function Home() {
       <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <BatteryIQLogo
-            size={40}
+            size={32}
             animated={false}
             clickable={true}
             showText={true}

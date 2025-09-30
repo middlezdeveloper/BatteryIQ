@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 
@@ -20,7 +21,9 @@ export const BatteryIQLogo = ({
   clickable = false,
   showText = false
 }: LogoProps) => {
-  const logoContent = animated ? (
+  const [isHovered, setIsHovered] = useState(false)
+
+  const logoContent = animated || isHovered ? (
     <AnimatedLogo color={color} size={size} />
   ) : (
     <StaticLogo color={color} size={size} />
@@ -29,7 +32,7 @@ export const BatteryIQLogo = ({
   const content = showText ? (
     <div className="flex items-center space-x-3">
       {logoContent}
-      <span className="text-2xl font-heading font-bold text-midnight-blue">BatteryIQ</span>
+      <span className="text-3xl font-heading font-bold text-midnight-blue tracking-tight">BatteryIQ</span>
     </div>
   ) : logoContent
 
@@ -40,6 +43,8 @@ export const BatteryIQLogo = ({
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
         >
           {content}
         </motion.div>
@@ -47,7 +52,15 @@ export const BatteryIQLogo = ({
     )
   }
 
-  return <div className={className}>{content}</div>
+  return (
+    <div
+      className={className}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {content}
+    </div>
+  )
 }
 
 const StaticLogo = ({ color, size }: { color: string; size: number }) => {
@@ -86,26 +99,50 @@ const StaticLogo = ({ color, size }: { color: string; size: number }) => {
   )
 }
 
-const AnimatedLogo = ({ color, size }: { color: string; size: number }) => (
-  <svg width={size} height={size} viewBox="0 0 80 80">
-    <rect x="20" y="25" width="40" height="30" rx="2" fill="none" stroke={color} strokeWidth="3"/>
-    <rect x="35" y="20" width="10" height="5" rx="1" fill={color}/>
-    <g clipPath="url(#batteryClipAnimated)">
-      <motion.path
-        d="M -40 40 Q -20 30, 0 40 Q 20 50, 40 40 Q 60 30, 80 40 Q 100 50, 120 40 Q 140 30, 160 40 Q 180 50, 200 40 L 200 70 L -40 70 Z"
-        fill={color}
-        opacity="0.5"
-        animate={{ x: [0, -80] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+const AnimatedLogo = ({ color, size }: { color: string; size: number }) => {
+  const strokeWidth = size <= 32 ? 8 : 7
+  const rectWidth = 70
+  const rectHeight = 56
+  const terminalWidth = 20
+  const terminalHeight = 9
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 80 80" className="transition-transform duration-200">
+      <rect
+        x="5"
+        y="12"
+        width={rectWidth}
+        height={rectHeight}
+        rx="3"
+        fill="none"
+        stroke={color}
+        strokeWidth={strokeWidth}
       />
-    </g>
-    <defs>
-      <clipPath id="batteryClipAnimated">
-        <rect x="22" y="27" width="36" height="26" rx="1"/>
-      </clipPath>
-    </defs>
-  </svg>
-)
+      <rect
+        x="30"
+        y="3"
+        width={terminalWidth}
+        height={terminalHeight}
+        rx="2"
+        fill={color}
+      />
+      <g clipPath="url(#batteryClipAnimated)">
+        <motion.path
+          d="M -40 40 Q -20 28, 0 40 Q 20 52, 40 40 Q 60 28, 80 40 Q 100 52, 120 40 Q 140 28, 160 40 Q 180 52, 200 40 L 200 64 L -40 64 Z"
+          fill={color}
+          opacity="0.5"
+          animate={{ x: [0, -80] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+        />
+      </g>
+      <defs>
+        <clipPath id="batteryClipAnimated">
+          <rect x="7" y="14" width="66" height="52" rx="2"/>
+        </clipPath>
+      </defs>
+    </svg>
+  )
+}
 
 export const BatteryIQLoader = ({
   color = '#00D97E',
