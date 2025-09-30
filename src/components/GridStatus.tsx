@@ -257,32 +257,35 @@ export default function GridStatus({
         </div>
       </div>
 
-      {/* Generation Mix - Pie Chart */}
+      {/* Generation Mix - Renewable vs Non-Renewable */}
       <div className="mt-6">
         <h4 className="text-sm font-medium text-gray-900 mb-4">
           Generation Mix ({Math.round(gridData.totalDemand)} MW)
         </h4>
         <div className="flex justify-center">
           <PieChart
-            data={Object.entries(gridData.fueltechBreakdown)
-              .filter(([_, value]) => value > 0)
-              .map(([fuel, mw]) => ({
-                label: fuel,
-                value: mw,
-                mw: Math.round(mw),
-                color: {
-                  coal: '#374151',      // gray-700
-                  gas: '#3B82F6',       // blue-500
-                  wind: '#10B981',      // emerald-500
-                  solar: '#F59E0B',     // amber-500
-                  hydro: '#06B6D4',     // cyan-500
-                  battery: '#8B5CF6',   // violet-500
-                  other: '#6B7280'      // gray-500
-                }[fuel] || '#9CA3AF'
-              }))}
+            data={[
+              {
+                label: 'Renewable',
+                value: Math.round((gridData.renewableShare / 100) * gridData.totalDemand),
+                mw: Math.round((gridData.renewableShare / 100) * gridData.totalDemand),
+                color: '#10B981' // emerald-500
+              },
+              {
+                label: 'Non-Renewable',
+                value: Math.round(((100 - gridData.renewableShare) / 100) * gridData.totalDemand),
+                mw: Math.round(((100 - gridData.renewableShare) / 100) * gridData.totalDemand),
+                color: '#6B7280' // gray-500
+              }
+            ]}
             size={240}
             className="mx-auto"
           />
+        </div>
+        <div className="mt-3 text-center">
+          <p className="text-xs text-gray-500">
+            Based on live AEMO data - fuel type breakdown estimates coming soon
+          </p>
         </div>
       </div>
     </div>
