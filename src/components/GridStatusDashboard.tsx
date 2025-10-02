@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { MapPin, RefreshCw } from 'lucide-react'
+import { BatteryIQLogo } from '@/components/ui/BatteryIQLogo'
+import MobileNavigation from '@/components/MobileNavigation'
 
 interface LocationData {
   city: string
@@ -273,9 +275,34 @@ export default function GridStatusDashboard() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Live Grid Status</h1>
+    <div className="min-h-screen bg-gradient-to-br from-morning-sky to-whisper-gray">
+      {/* Header */}
+      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <BatteryIQLogo
+            size={32}
+            animated={true}
+            clickable={true}
+            showText={true}
+          />
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex space-x-8">
+            <a href="/" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Home</a>
+            <a href="/calculator" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Calculator</a>
+            <a href="/grid-status" className="text-battery-green font-medium">Grid Status</a>
+            <a href="/#rebates" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Rebates</a>
+            <a href="/#guides" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Guides</a>
+          </nav>
+
+          {/* Mobile Navigation */}
+          <MobileNavigation />
+        </div>
+      </header>
+
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Live Grid Status</h1>
 
         {/* Location Display */}
         {location && (
@@ -379,7 +406,7 @@ export default function GridStatusDashboard() {
         {gridData && (
           <div className="bg-white rounded-lg p-6 shadow-sm mt-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Grid Consumption Mix - {gridData.region}</h2>
-            <p className="text-sm text-gray-600 mb-4">Shows what {gridData.region} is consuming (includes imports from other states)</p>
+            <p className="text-sm text-gray-600 mb-4">⚡ Shows what {gridData.region} is consuming (includes imports from other states)</p>
 
             {/* Grid Summary */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-sm">
@@ -403,7 +430,7 @@ export default function GridStatusDashboard() {
 
             {/* Fuel Mix Breakdown */}
             <div className="space-y-2">
-              <h3 className="font-semibold text-gray-800 mb-3">Generation by Source</h3>
+              <h3 className="font-semibold text-gray-800 mb-3">Consumption by Source</h3>
 
               {gridData.fueltechBreakdown.battery > 0 && (
                 <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
@@ -522,17 +549,13 @@ export default function GridStatusDashboard() {
 
         {/* OpenElectricity Real Fuel Mix (Test) */}
         {openElectricityData && (
-          <div className="bg-blue-50 rounded-lg p-6 shadow-sm mt-6 border-2 border-blue-200">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Local Generation Mix - {openElectricityData.region}</h2>
-                <p className="text-sm text-blue-700 mt-1">⚡ Shows what {openElectricityData.region} is generating locally (excludes imports)</p>
-              </div>
-            </div>
+          <div className="bg-white rounded-lg p-6 shadow-sm mt-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Local Generation Mix - {openElectricityData.region}</h2>
+            <p className="text-sm text-gray-600 mb-4">⚡ Shows what {openElectricityData.region} is generating locally (excludes imports)</p>
 
             {/* Summary Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-sm">
-              <div className="bg-white p-3 rounded">
+              <div className="bg-gray-50 p-3 rounded">
                 <div className="text-gray-600 text-xs mb-1">Local Generation</div>
                 <div className="text-lg font-semibold">{(openElectricityData.totalDemand / 1000).toFixed(1)} GW</div>
               </div>
@@ -546,7 +569,7 @@ export default function GridStatusDashboard() {
                   <div className="text-lg font-semibold text-orange-700">{openElectricityData.carbonIntensity} kg/MWh</div>
                 </div>
               )}
-              <div className="bg-blue-100 p-3 rounded">
+              <div className="bg-blue-50 p-3 rounded">
                 <div className="text-gray-600 text-xs mb-1">Data Source</div>
                 <div className="text-sm font-semibold text-blue-700">Real-time API</div>
               </div>
@@ -554,10 +577,10 @@ export default function GridStatusDashboard() {
 
             {/* Fuel Mix Breakdown - Always show all fuel types including Solar at 0 */}
             <div className="space-y-2">
-              <h3 className="font-semibold text-gray-800 mb-3">Local Generation by Source</h3>
+              <h3 className="font-semibold text-gray-800 mb-3">Generation by Source</h3>
 
               {/* Grid Battery */}
-              <div className="flex items-center justify-between p-2 hover:bg-white rounded">
+              <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                 <div className="flex items-center space-x-3 flex-1">
                   <div className="w-3 h-3 rounded-full bg-purple-500"></div>
                   <span className="font-medium">
@@ -572,7 +595,7 @@ export default function GridStatusDashboard() {
 
               {/* Biomass */}
               {openElectricityData.fuels.biomass > 0 && (
-                <div className="flex items-center justify-between p-2 hover:bg-white rounded">
+                <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                   <div className="flex items-center space-x-3 flex-1">
                     <div className="w-3 h-3 rounded-full bg-lime-600"></div>
                     <span className="font-medium">Biomass</span>
@@ -586,7 +609,7 @@ export default function GridStatusDashboard() {
 
               {/* Coal */}
               {openElectricityData.fuels.coal > 0 && (
-                <div className="flex items-center justify-between p-2 hover:bg-white rounded">
+                <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                   <div className="flex items-center space-x-3 flex-1">
                     <div className="w-3 h-3 rounded-full bg-gray-700"></div>
                     <span className="font-medium">Coal</span>
@@ -599,7 +622,7 @@ export default function GridStatusDashboard() {
               )}
 
               {/* Gas */}
-              <div className="flex items-center justify-between p-2 hover:bg-white rounded">
+              <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                 <div className="flex items-center space-x-3 flex-1">
                   <div className="w-3 h-3 rounded-full bg-blue-500"></div>
                   <span className="font-medium">Gas</span>
@@ -611,7 +634,7 @@ export default function GridStatusDashboard() {
               </div>
 
               {/* Hydro */}
-              <div className="flex items-center justify-between p-2 hover:bg-white rounded">
+              <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                 <div className="flex items-center space-x-3 flex-1">
                   <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
                   <span className="font-medium">Hydro</span>
@@ -623,7 +646,7 @@ export default function GridStatusDashboard() {
               </div>
 
               {/* Solar (Utility) - ALWAYS SHOW even if 0 */}
-              <div className="flex items-center justify-between p-2 hover:bg-white rounded">
+              <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                 <div className="flex items-center space-x-3 flex-1">
                   <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                   <span className="font-medium">Solar (Utility)</span>
@@ -635,7 +658,7 @@ export default function GridStatusDashboard() {
               </div>
 
               {/* Solar (Rooftop) - ALWAYS SHOW even if 0 */}
-              <div className="flex items-center justify-between p-2 hover:bg-white rounded">
+              <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                 <div className="flex items-center space-x-3 flex-1">
                   <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
                   <span className="font-medium">Solar (Rooftop)</span>
@@ -647,7 +670,7 @@ export default function GridStatusDashboard() {
               </div>
 
               {/* Wind */}
-              <div className="flex items-center justify-between p-2 hover:bg-white rounded">
+              <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                 <div className="flex items-center space-x-3 flex-1">
                   <div className="w-3 h-3 rounded-full bg-green-500"></div>
                   <span className="font-medium">Wind</span>
@@ -660,7 +683,7 @@ export default function GridStatusDashboard() {
 
               {/* Liquid Fuel */}
               {openElectricityData.fuels.distillate > 0 && (
-                <div className="flex items-center justify-between p-2 hover:bg-white rounded">
+                <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                   <div className="flex items-center space-x-3 flex-1">
                     <div className="w-3 h-3 rounded-full bg-red-500"></div>
                     <span className="font-medium">Liquid Fuel</span>
@@ -675,14 +698,68 @@ export default function GridStatusDashboard() {
             </div>
 
             {/* Data Source Attribution */}
-            <div className="mt-6 pt-4 border-t border-blue-200 text-xs text-gray-600">
-              <p className="font-semibold">Data Source: <span className="text-blue-700">{openElectricityData.dataSource}</span></p>
-              <p className="mt-1">Region: {openElectricityData.region} | Updated: {new Date(openElectricityData.timestamp).toLocaleString()}</p>
-              <p className="mt-2 text-blue-600">Note: This shows local generation only. {openElectricityData.region} may import/export power via interconnectors. Brown coal is Victoria-specific; black coal comes from NSW/QLD imports (shown in consumption mix above).</p>
+            <div className="mt-6 pt-4 border-t border-gray-200 text-xs text-gray-500">
+              <p>Data Source: <strong>{openElectricityData.dataSource}</strong></p>
+              <p className="text-xs mt-1">Region: {openElectricityData.region} | Updated: {new Date(openElectricityData.timestamp).toLocaleString()}</p>
+              <p className="mt-2 text-gray-600">Note: This shows local generation only. {openElectricityData.region} may import/export power via interconnectors. Brown coal is Victoria-specific; black coal comes from NSW/QLD imports (shown in consumption mix above).</p>
             </div>
           </div>
         )}
+        </div>
       </div>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12 mt-16">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
+              <div className="mb-4">
+                <BatteryIQLogo
+                  size={24}
+                  animated={false}
+                  clickable={false}
+                  showText={true}
+                  color="#00D97E"
+                  className="[&_span]:text-white [&_span]:text-xl"
+                />
+              </div>
+              <p className="text-gray-400">
+                Intelligent battery decisions for smart, environmentally conscious Australians.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Tools</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="/calculator" className="hover:text-white">Battery Calculator</a></li>
+                <li><a href="/grid-status" className="hover:text-white">Grid Status</a></li>
+                <li><a href="#" className="hover:text-white">ROI Calculator</a></li>
+                <li><a href="#" className="hover:text-white">Installer Finder</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Resources</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="/#rebates" className="hover:text-white">2025 Rebate Guide</a></li>
+                <li><a href="#" className="hover:text-white">VPP Requirements</a></li>
+                <li><a href="#" className="hover:text-white">Installation Timeline</a></li>
+                <li><a href="#" className="hover:text-white">Battery Comparison</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Support</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="#" className="hover:text-white">Help Center</a></li>
+                <li><a href="#" className="hover:text-white">Contact Us</a></li>
+                <li><a href="#" className="hover:text-white">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-white">Terms of Service</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; 2025 BatteryIQ. All rights reserved. Intelligent battery decisions for Australia.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
