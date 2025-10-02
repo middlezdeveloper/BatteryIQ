@@ -237,13 +237,29 @@ class AEMOAPI {
 
     const mix = regionalMix[region as keyof typeof regionalMix] || { coal: 0.5, gas: 0.4, other: 0.1 }
 
+    // Check if it's daytime (solar only generates during day)
+    // Use Australian Eastern Time (AEST/AEDT) for most NEM regions
+    const now = new Date()
+    const australiaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Australia/Sydney' }))
+    const hour = australiaTime.getHours()
+    const isDaytime = hour >= 6 && hour <= 19
+
+    // Solar can only generate during daylight hours
+    const solarMW = isDaytime ? Math.round(renewableMW * 0.25) : 0
+
+    // Redistribute solar's share to wind/hydro at night
+    const remainingRenewableMW = renewableMW - solarMW
+    const windShare = isDaytime ? 0.4 : 0.55  // More wind at night
+    const hydroShare = isDaytime ? 0.3 : 0.4  // More hydro at night
+    const batteryShare = 0.05
+
     return {
       coal: Math.round(fossilMW * mix.coal),
       gas: Math.round(fossilMW * mix.gas),
-      hydro: Math.round(renewableMW * 0.3), // Estimate hydro portion
-      wind: Math.round(renewableMW * 0.4),  // Estimate wind portion
-      solar: Math.round(renewableMW * 0.25), // Estimate solar portion
-      battery: Math.round(renewableMW * 0.05), // Estimate battery portion
+      hydro: Math.round(remainingRenewableMW * hydroShare),
+      wind: Math.round(remainingRenewableMW * windShare),
+      solar: solarMW,
+      battery: Math.round(remainingRenewableMW * batteryShare),
       other: Math.round(fossilMW * mix.other)
     }
   }
