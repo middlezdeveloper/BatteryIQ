@@ -14,12 +14,71 @@ const postcodeToState = (postcode: string): string => {
   return 'NSW' // Default fallback
 }
 
+// Map region to Australian state
+const mapRegionToState = (region: string, postal: string): string => {
+  if (!region) {
+    return postal ? postcodeToState(postal) : 'VIC'
+  }
+
+  const regionUpper = region.toUpperCase()
+  if (['NSW', 'NEW SOUTH WALES'].includes(regionUpper)) return 'NSW'
+  if (['VIC', 'VICTORIA'].includes(regionUpper)) return 'VIC'
+  if (['QLD', 'QUEENSLAND'].includes(regionUpper)) return 'QLD'
+  if (['SA', 'SOUTH AUSTRALIA'].includes(regionUpper)) return 'SA'
+  if (['WA', 'WESTERN AUSTRALIA'].includes(regionUpper)) return 'WA'
+  if (['TAS', 'TASMANIA'].includes(regionUpper)) return 'TAS'
+  if (['NT', 'NORTHERN TERRITORY'].includes(regionUpper)) return 'NT'
+  if (['ACT', 'AUSTRALIAN CAPITAL TERRITORY'].includes(regionUpper)) return 'ACT'
+
+  // Fallback to postcode mapping
+  return postal ? postcodeToState(postal) : 'VIC'
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Get client IP from headers
     const forwarded = request.headers.get('x-forwarded-for')
     const realIp = request.headers.get('x-real-ip')
-    const clientIp = forwarded?.split(',')[0] || realIp || '127.0.0.1'
+    let clientIp = forwarded?.split(',')[0] || realIp || '127.0.0.1'
+
+    // If running locally (localhost IP), fetch external IP first
+    if (clientIp === '127.0.0.1' || clientIp === '::1' || clientIp.startsWith('192.168.') || clientIp.startsWith('10.')) {
+      try {
+        // Get external IP using ipapi.co without specifying an IP (gets caller's external IP)
+        const externalIpResponse = await fetch('https://ipapi.co/json/', {
+          headers: {
+            'User-Agent': 'BatteryIQ/1.0'
+          }
+        })
+
+        if (externalIpResponse.ok) {
+          const externalData = await externalIpResponse.json()
+          if (externalData.ip) {
+            clientIp = externalData.ip
+            console.log(`🌍 Detected external IP: ${clientIp} (was localhost)`)
+
+            // Return the location data directly since we already have it
+            const response = {
+              success: true,
+              location: {
+                country: externalData.country_code,
+                state: mapRegionToState(externalData.region, externalData.postal),
+                region: externalData.region,
+                city: externalData.city,
+                postcode: externalData.postal,
+                latitude: externalData.latitude,
+                longitude: externalData.longitude
+              },
+              detectedIp: clientIp,
+              isAustralian: externalData.country_code === 'AU'
+            }
+            return NextResponse.json(response)
+          }
+        }
+      } catch (externalIpError) {
+        console.warn('Failed to get external IP, using original IP:', externalIpError)
+      }
+    }
 
     // Use ipapi.co for free IP geolocation (no API key needed)
     const locationResponse = await fetch(`https://ipapi.co/${clientIp}/json/`, {
@@ -44,41 +103,22 @@ export async function GET(request: NextRequest) {
       longitude
     } = locationData
 
-    // Default to VIC for Australian IPs if we can't determine state
-    let detectedState = 'VIC'
-
-    if (country_code === 'AU') {
-      // Try to map by region name first
-      const regionUpper = region?.toUpperCase()
-      if (['NSW', 'NEW SOUTH WALES'].includes(regionUpper)) detectedState = 'NSW'
-      else if (['VIC', 'VICTORIA'].includes(regionUpper)) detectedState = 'VIC'
-      else if (['QLD', 'QUEENSLAND'].includes(regionUpper)) detectedState = 'QLD'
-      else if (['SA', 'SOUTH AUSTRALIA'].includes(regionUpper)) detectedState = 'SA'
-      else if (['WA', 'WESTERN AUSTRALIA'].includes(regionUpper)) detectedState = 'WA'
-      else if (['TAS', 'TASMANIA'].includes(regionUpper)) detectedState = 'TAS'
-      else if (['NT', 'NORTHERN TERRITORY'].includes(regionUpper)) detectedState = 'NT'
-      else if (['ACT', 'AUSTRALIAN CAPITAL TERRITORY'].includes(regionUpper)) detectedState = 'ACT'
-      // Fallback to postcode mapping if region name doesn't match
-      else if (postal) {
-        detectedState = postcodeToState(postal)
-      }
-    }
+    // For non-Australian visitors, provide their actual location but flag as non-Australian
+    const isAustralian = country_code === 'AU'
 
     const response = {
       success: true,
       location: {
         country: country_code,
-        state: detectedState,
-        region: region,
-        city: city,
+        state: isAustralian ? mapRegionToState(region, postal) : 'NSW', // Default to NSW for international
+        region: isAustralian ? region : 'New South Wales',
+        city: city || 'Sydney',
         postcode: postal,
-        coordinates: {
-          lat: latitude,
-          lng: longitude
-        }
+        latitude: latitude || -33.8688,
+        longitude: longitude || 151.2093
       },
       detectedIp: clientIp,
-      isAustralian: country_code === 'AU'
+      isAustralian
     }
 
     return NextResponse.json(response)

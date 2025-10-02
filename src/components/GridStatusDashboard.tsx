@@ -96,24 +96,58 @@ export default function GridStatusDashboard() {
         const response = await fetch('/api/location')
         if (response.ok) {
           const locationData = await response.json()
-          if (locationData.success && locationData.isAustralian) {
+          if (locationData.success) {
+            // Set location regardless of whether they're Australian
             setLocation(locationData.location)
-            // Once we have location, fetch weather, grid, and OpenElectricity data
+
+            // If not Australian, show NSW (NEM-wide) data as fallback
+            const stateToUse = locationData.isAustralian ? locationData.location.state : 'NSW'
+
+            // Fetch weather, grid, and OpenElectricity data
             await Promise.all([
               fetchWeatherData(locationData.location.latitude, locationData.location.longitude),
-              fetchGridData(locationData.location.state),
-              fetchOpenElectricityData(locationData.location.state)
+              fetchGridData(stateToUse),
+              fetchOpenElectricityData(stateToUse)
             ])
           } else {
-            setError('Location detection failed - not in Australia or unable to detect')
-            setLoading(false)
+            // Fallback to NSW/Melbourne if location detection completely fails
+            setLocation({
+              city: 'Melbourne',
+              state: 'NSW',
+              country: 'AU',
+              isAustralian: true,
+              latitude: -37.8136,
+              longitude: 144.9631,
+              region: 'NSW1'
+            })
+            await Promise.all([
+              fetchWeatherData(-37.8136, 144.9631),
+              fetchGridData('NSW'),
+              fetchOpenElectricityData('NSW')
+            ])
           }
         } else {
           throw new Error('Location API failed')
         }
       } catch (err) {
         console.error('Location detection error:', err)
-        setError('Failed to detect location')
+        // Fallback to NSW data on error
+        setLocation({
+          city: 'Sydney',
+          state: 'NSW',
+          country: 'AU',
+          isAustralian: true,
+          latitude: -33.8688,
+          longitude: 151.2093,
+          region: 'NSW1'
+        })
+        await Promise.all([
+          fetchWeatherData(-33.8688, 151.2093),
+          fetchGridData('NSW'),
+          fetchOpenElectricityData('NSW')
+        ])
+        setError(null) // Clear error since we have fallback data
+      } finally {
         setLoading(false)
       }
     }
@@ -154,7 +188,11 @@ export default function GridStatusDashboard() {
 
   const fetchGridData = async (state: string) => {
     try {
-      const response = await fetch(`/api/grid?state=${state}`)
+      // Map state to AEMO region, fallback to NSW1 for non-AEMO states
+      const aemoRegions = ['NSW', 'VIC', 'QLD', 'SA', 'TAS', 'ACT']
+      const mappedState = aemoRegions.includes(state) ? state : 'NSW'
+
+      const response = await fetch(`/api/grid?state=${mappedState}`)
 
       if (response.ok) {
         const result = await response.json()
@@ -172,14 +210,16 @@ export default function GridStatusDashboard() {
 
   const fetchOpenElectricityData = async (state: string) => {
     try {
-      // Map state to region
+      // Map state to region, fallback to NSW1 for non-AEMO states
       const regionMap: Record<string, string> = {
         'NSW': 'NSW1',
         'VIC': 'VIC1',
         'QLD': 'QLD1',
         'SA': 'SA1',
         'TAS': 'TAS1',
-        'ACT': 'NSW1'
+        'ACT': 'NSW1',
+        'NT': 'NSW1', // Northern Territory -> fallback to NSW
+        'WA': 'NSW1'  // Western Australia -> fallback to NSW (not in NEM but shows NEM data)
       }
       const region = regionMap[state] || 'NSW1'
 
@@ -239,20 +279,42 @@ export default function GridStatusDashboard() {
 
         {/* Location Display */}
         {location && (
-          <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
-            <div className="flex items-center space-x-2 mb-4">
-              <MapPin className="w-5 h-5 text-blue-500" />
-              <h2 className="text-xl font-semibold text-gray-900">Detected Location</h2>
+          <>
+            <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
+              <div className="flex items-center space-x-2 mb-4">
+                <MapPin className="w-5 h-5 text-blue-500" />
+                <h2 className="text-xl font-semibold text-gray-900">Detected Location</h2>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div><strong>City:</strong> {location.city}</div>
+                <div><strong>State:</strong> {location.state}</div>
+                <div><strong>Country:</strong> {location.country}</div>
+                <div><strong>NEM Region:</strong> {location.region}</div>
+                <div><strong>Latitude:</strong> {location.latitude.toFixed(4)}°</div>
+                <div><strong>Longitude:</strong> {location.longitude.toFixed(4)}°</div>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div><strong>City:</strong> {location.city}</div>
-              <div><strong>State:</strong> {location.state}</div>
-              <div><strong>Country:</strong> {location.country}</div>
-              <div><strong>NEM Region:</strong> {location.region}</div>
-              <div><strong>Latitude:</strong> {location.latitude.toFixed(4)}°</div>
-              <div><strong>Longitude:</strong> {location.longitude.toFixed(4)}°</div>
-            </div>
-          </div>
+
+            {/* Non-Australian Notice */}
+            {location.country !== 'AU' && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-blue-800">
+                  <strong>ℹ️ International Visitor:</strong> You're viewing data for NSW/NEM (Australian National Electricity Market).
+                  Grid data and recommendations are specific to Australia's electricity network.
+                </p>
+              </div>
+            )}
+
+            {/* WA Notice */}
+            {location.state === 'WA' && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-yellow-800">
+                  <strong>⚠️ Western Australia:</strong> WA uses the SWIS (South West Interconnected System), not the NEM.
+                  Showing NSW/NEM data as a reference. WA-specific data coming soon.
+                </p>
+              </div>
+            )}
+          </>
         )}
 
         {/* Weather Data Display */}
