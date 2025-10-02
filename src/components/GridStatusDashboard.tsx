@@ -342,29 +342,29 @@ export default function GridStatusDashboard() {
             <div className="space-y-3">
               <h3 className="font-semibold text-gray-800 border-b pb-1">Current Conditions</h3>
               <div><strong>Conditions:</strong> {weatherData?.conditions || 'No data'}</div>
-              <div><strong>Temperature:</strong> {weatherData?.current.temperature !== undefined ? `${weatherData.current.temperature.toFixed(1)}°C` : 'No data'}</div>
-              <div><strong>Cloud Cover:</strong> {weatherData?.current.cloudCover !== undefined ? `${weatherData.current.cloudCover}%` : 'No data'}</div>
+              <div><strong>Temperature:</strong> {weatherData?.current?.temperature !== undefined ? `${weatherData.current.temperature.toFixed(1)}°C` : 'No data'}</div>
+              <div><strong>Cloud Cover:</strong> {weatherData?.current?.cloudCover !== undefined ? `${weatherData.current.cloudCover}%` : 'No data'}</div>
             </div>
 
             {/* Humidity & Wind */}
             <div className="space-y-3">
               <h3 className="font-semibold text-gray-800 border-b pb-1">Humidity & Wind</h3>
-              <div><strong>Humidity:</strong> {weatherData?.current.humidity !== undefined ? `${weatherData.current.humidity}%` : 'No data'}</div>
-              <div><strong>Wind Speed:</strong> {weatherData?.current.windSpeed !== undefined ? `${weatherData.current.windSpeed.toFixed(1)} km/h` : 'No data'}</div>
+              <div><strong>Humidity:</strong> {weatherData?.current?.humidity !== undefined ? `${weatherData.current.humidity}%` : 'No data'}</div>
+              <div><strong>Wind Speed:</strong> {weatherData?.current?.windSpeed !== undefined ? `${weatherData.current.windSpeed.toFixed(1)} km/h` : 'No data'}</div>
             </div>
 
             {/* Solar Irradiance */}
             <div className="space-y-3">
               <h3 className="font-semibold text-gray-800 border-b pb-1">Solar Irradiance</h3>
-              <div><strong>GHI:</strong> {weatherData?.solar.ghi !== undefined ? `${Math.round(weatherData.solar.ghi)} W/m²` : 'No data'}</div>
-              <div><strong>DNI:</strong> {weatherData?.solar.dni !== undefined ? `${Math.round(weatherData.solar.dni)} W/m²` : 'No data'}</div>
-              <div><strong>DHI:</strong> {weatherData?.solar.dhi !== undefined ? `${Math.round(weatherData.solar.dhi)} W/m²` : 'No data'}</div>
+              <div><strong>GHI:</strong> {weatherData?.solar?.ghi !== undefined ? `${Math.round(weatherData.solar.ghi)} W/m²` : 'No data'}</div>
+              <div><strong>DNI:</strong> {weatherData?.solar?.dni !== undefined ? `${Math.round(weatherData.solar.dni)} W/m²` : 'No data'}</div>
+              <div><strong>DHI:</strong> {weatherData?.solar?.dhi !== undefined ? `${Math.round(weatherData.solar.dhi)} W/m²` : 'No data'}</div>
             </div>
 
             {/* Location Info */}
             <div className="space-y-3">
               <h3 className="font-semibold text-gray-800 border-b pb-1">Location Info</h3>
-              <div><strong>Timezone:</strong> {weatherData?.location.timezone || 'No data'}</div>
+              <div><strong>Timezone:</strong> {weatherData?.location?.timezone || 'No data'}</div>
               <div><strong>Data Source:</strong> Open-Meteo</div>
             </div>
           </div>

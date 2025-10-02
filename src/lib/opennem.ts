@@ -276,7 +276,7 @@ export function getRegionFromState(state: string): string {
     'QLD': 'QLD1',
     'SA': 'SA1',
     'TAS': 'TAS1',
-    'WA': 'WEM', // Western Australia is separate from NEM
+    'WA': 'NSW1', // Western Australia uses WEM (not NEM), fallback to NSW1 for now
     'NT': 'NSW1', // Northern Territory connected to NEM via NSW
     'ACT': 'NSW1'  // ACT is part of NSW region
   }
