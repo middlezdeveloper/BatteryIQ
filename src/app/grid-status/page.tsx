@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import GridDashboard from '@/components/GridDashboard'
+import GridStatusDashboard from '@/components/GridStatusDashboard'
 
 export const metadata: Metadata = {
   title: 'Live Grid Status | BatteryIQ - Australian Energy Grid Dashboard',
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function GridStatusPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-morning-sky to-whisper-gray">
-      <GridDashboard />
+      <GridStatusDashboard />
     </main>
   )
 }
