@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "prisma generate && next build --turbopack",
-    "start": "next start",
+    "dev": "NODE_OPTIONS='--max-old-space-size=4096' next dev --turbopack",
+    "build": "NODE_OPTIONS='--max-old-space-size=4096' prisma generate && next build --turbopack",
+    "start": "NODE_OPTIONS='--max-old-space-size=4096' next start",
     "lint": "eslint --fix",
-    "build:prod": "ESLINT_NO_DEV_ERRORS=true prisma generate && next build",
+    "build:prod": "ESLINT_NO_DEV_ERRORS=true NODE_OPTIONS='--max-old-space-size=4096' prisma generate && next build",
     "postinstall": "prisma generate"
   },
   "dependencies": {

@@ -19,6 +19,7 @@ export default function Home() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8">
             <a href="/calculator" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Calculator</a>
+            <a href="/compare-plans" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Compare Plans</a>
             <a href="/grid-status" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Grid Status</a>
             <a href="#rebates" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Rebates</a>
             <a href="#guides" className="text-serious-gray hover:text-battery-green font-medium transition-colors">Guides</a>

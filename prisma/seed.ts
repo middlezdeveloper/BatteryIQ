@@ -225,38 +225,51 @@ async function main() {
 
   const energyPlans = [
     {
+      id: 'AGL-SOLAR-PLUS-NSW',
       retailerId: 'AGL',
       retailerName: 'AGL Energy',
       planName: 'AGL Solar Plus',
       state: 'NSW',
+      fuelType: 'ELECTRICITY',
+      distributors: JSON.stringify(['AUSGRID', 'ENDEAVOUR', 'ESSENTIAL']),
       tariffType: TariffType.TIME_OF_USE,
       peakRate: 32.5,
       offPeakRate: 22.0,
       shoulderRate: 28.0,
       dailySupplyCharge: 95.0,
-      feedInTariff: 8.0
+      feedInTariff: 8.0,
+      rawData: JSON.stringify({ seed: true })
     },
     {
+      id: 'ORIGIN-SOLAR-BOOST-VIC',
       retailerId: 'ORIGIN',
       retailerName: 'Origin Energy',
       planName: 'Origin Solar Boost',
       state: 'VIC',
+      fuelType: 'ELECTRICITY',
+      distributors: JSON.stringify(['CITIPOWER', 'POWERCOR', 'AUSNET']),
       tariffType: TariffType.TIME_OF_USE,
       peakRate: 30.8,
       offPeakRate: 20.5,
       shoulderRate: 26.0,
       dailySupplyCharge: 88.0,
-      feedInTariff: 6.7
+      feedInTariff: 6.7,
+      rawData: JSON.stringify({ seed: true })
     },
     {
+      id: 'EA-NO-WORRIES-QLD',
       retailerId: 'ENERGYAUSTRALIA',
       retailerName: 'Energy Australia',
       planName: 'No Worries Solar',
       state: 'QLD',
+      fuelType: 'ELECTRICITY',
+      distributors: JSON.stringify(['ENERGEX', 'ERGON']),
       tariffType: TariffType.FLAT,
       peakRate: 28.5,
+      singleRate: 28.5,
       dailySupplyCharge: 92.0,
-      feedInTariff: 7.2
+      feedInTariff: 7.2,
+      rawData: JSON.stringify({ seed: true })
     }
   ]
 

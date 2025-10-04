@@ -66,6 +66,7 @@ export default function MobileNavigation() {
             <ul className="space-y-6">
               {[
                 { href: '/calculator', icon: '🚀', label: 'Calculator' },
+                { href: '/compare-plans', icon: '📊', label: 'Compare Plans' },
                 { href: '/grid-status', icon: '⚡', label: 'Grid Status' },
                 { href: '#rebates', icon: '💰', label: 'Rebates' },
                 { href: '#guides', icon: '📚', label: 'Guides' }

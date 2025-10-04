@@ -75,35 +75,107 @@ model Rebate {
   @@map("rebates")
 }
 
-// Energy retailers and plans (enhanced for DMO/VDO)
+// Electricity distributors (network operators)
+model Distributor {
+  id                  String                    @id @default(cuid())
+  code                String                    @unique  // "POWERCOR", "AUSGRID", "ENERGEX"
+  name                String                    // "Powercor Australia"
+  state               String                    // "VIC", "NSW", "QLD"
+  nmiPrefixes         String                    // JSON array of NMI prefixes
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+
+  postcodeDistributors PostcodeDistributor[]
+
+  @@index([state])
+  @@index([code])
+  @@map("distributors")
+}
+
+// Postcode to Distributor mapping (many-to-many)
+model PostcodeDistributor {
+  id                  String                    @id @default(cuid())
+  postcode            Int
+  distributorId       String
+  isPrimary           Boolean                   @default(false)  // Main distributor for this postcode
+  createdAt           DateTime                  @default(now())
+
+  distributor         Distributor               @relation(fields: [distributorId], references: [id])
+
+  @@unique([postcode, distributorId])
+  @@index([postcode])
+  @@map("postcode_distributors")
+}
+
+// Energy retailers and plans (enhanced for CDR API data)
 model EnergyPlan {
-  id                  String               @id @default(cuid())
+  id                  String               @id // Use CDR planId as primary key
   retailerId          String
   retailerName        String
   planName            String
   state               String
-  distributor         String?              // For DMO/VDO
+  fuelType            String               // ELECTRICITY, GAS, DUAL
   tariffType          TariffType
   planType            PlanType             @default(MARKET)
 
-  // Pricing structure
-  peakRate            Float                // c/kWh
-  offPeakRate         Float?               // c/kWh
+  // Geographic eligibility
+  distributors        String               // JSON array of distributor codes
+  includedPostcodes   String?              // JSON array of included postcodes
+  excludedPostcodes   String?              // JSON array of excluded postcodes
+
+  // Supply charges
+  dailySupplyCharge   Float                // cents per day
+
+  // Usage charges - Time-of-use
+  peakRate            Float?               // c/kWh
+  peakTimes           String?              // JSON array of time periods
   shoulderRate        Float?               // c/kWh
-  superOffPeakRate    Float?               // c/kWh (EV charging)
-  demandRate          Float?               // $/kW/day
-  dailySupplyCharge   Float                // c/day
-  feedInTariff        Float                // c/kWh
+  shoulderTimes       String?              // JSON array of time periods
+  offPeakRate         Float?               // c/kWh
+  offPeakTimes        String?              // JSON array of time periods
 
-  // Time-of-use schedules
-  timeOfUseSchedule   Json?                // Schedule definitions
+  // Usage charges - Single/Block
+  singleRate          Float?               // c/kWh (for flat rate plans)
+  blockRates          String?              // JSON array of block rate tiers
 
-  // Plan features
+  // Demand charges
+  demandRate          Float?               // $/kW/month
+  demandWindow        String?              // JSON object describing demand measurement
+
+  // Controlled load
+  controlledLoadRate  Float?               // c/kWh
+
+  // Solar & Battery
+  feedInTariff        Float?               // c/kWh (solar feed-in)
+  hasBatteryIncentive Boolean              @default(false)
+  batteryIncentiveValue Float?             // Annual $ value
+  hasVPP              Boolean              @default(false)
+  vppCreditPerYear    Float?               // Annual VPP credit
+
+  // Discounts
+  payOnTimeDiscount   Float?               // Percentage discount
+  directDebitDiscount Float?               // Percentage discount
+  otherDiscounts      String?              // JSON array of other discounts
+
+  // Fees
+  connectionFee       Float?
+  disconnectionFee    Float?
+  latePaymentFee      Float?
+  paperBillFee        Float?
+
+  // Contract terms
+  contractLength      Int?                 // months (null = ongoing)
+  exitFees            Float?
+
+  // Plan features (legacy compatibility)
   greenPower          Boolean              @default(false)
   carbonNeutral       Boolean              @default(false)
   isEVFriendly        Boolean              @default(false)
   hasPromotions       Boolean              @default(false)
-  promotionDetails    Json?                // Promotion information
+  promotionDetails    Json?
+
+  // CDR API raw data
+  rawData             String               // Full CDR JSON response
 
   // Tracking
   isActive            Boolean              @default(true)
@@ -117,7 +189,9 @@ model EnergyPlan {
 
   @@index([state, planType, isActive])
   @@index([retailerId])
-  @@index([isEVFriendly])
+  @@index([hasBatteryIncentive])
+  @@index([hasVPP])
+  @@index([fuelType])
   @@map("energy_plans")
 }
 

@@ -134,13 +134,16 @@ export async function POST(request: NextRequest) {
     const createdPlans = []
 
     for (const tariff of ALL_TARIFFS) {
+      const planId = `${tariff.planType}_${tariff.state}_${tariff.distributor?.replace(/\s+/g, '_')}`
       const energyPlan = await prisma.energyPlan.create({
         data: {
-          retailerId: `${tariff.planType}_${tariff.state}_${tariff.distributor?.replace(/\s+/g, '_')}`,
+          id: planId,
+          retailerId: planId,
           retailerName: `${tariff.planType} - ${tariff.distributor}`,
           planName: tariff.planName,
           state: tariff.state,
-          distributor: tariff.distributor,
+          fuelType: 'ELECTRICITY',
+          distributors: JSON.stringify([tariff.distributor || 'UNKNOWN']),
           tariffType: tariff.tariffType,
           planType: tariff.planType,
 
@@ -148,13 +151,13 @@ export async function POST(request: NextRequest) {
           peakRate: (tariff.peakRate || tariff.flatRate || 0) / 100,
           offPeakRate: tariff.offPeakRate ? tariff.offPeakRate / 100 : null,
           shoulderRate: tariff.shoulderRate ? tariff.shoulderRate / 100 : null,
-          superOffPeakRate: tariff.superOffPeakRate ? tariff.superOffPeakRate / 100 : null,
+          singleRate: tariff.flatRate ? tariff.flatRate / 100 : null,
           dailySupplyCharge: tariff.dailySupplyCharge / 100, // Convert c/day to $/day
           feedInTariff: tariff.feedInTariff / 100,
 
           // Schedule and features
-          timeOfUseSchedule: tariff.timeOfUseSchedule ? JSON.stringify(tariff.timeOfUseSchedule) : undefined,
           isEVFriendly: tariff.isEVFriendly,
+          rawData: JSON.stringify(tariff),
 
           // Validity
           validFrom: new Date(tariff.validFrom),
