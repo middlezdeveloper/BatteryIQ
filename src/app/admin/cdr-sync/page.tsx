@@ -222,46 +222,87 @@ export default function CDRSyncAdmin() {
             Sync Energy Plans
           </h2>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <button
-              onClick={() => handleSync('globird')}
-              disabled={syncing}
-              className="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg font-heading font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {syncing ? 'Syncing...' : 'Test: GloBird Energy'}
-              <div className="text-sm font-normal mt-1">~300 plans (~1 min)</div>
-            </button>
+          {/* Individual Big 3 Retailers - Recommended for Production */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-midnight-blue mb-3">
+              Individual Retailers (Recommended for Production)
+            </h3>
+            <div className="grid md:grid-cols-3 gap-4">
+              <button
+                onClick={() => handleSync('origin')}
+                disabled={syncing}
+                className="px-6 py-4 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg font-heading font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {syncing ? 'Syncing...' : 'Origin Energy'}
+                <div className="text-sm font-normal mt-1">~325 plans (~1 min)</div>
+              </button>
 
-            <button
-              onClick={() => handleSync(undefined, true)}
-              disabled={syncing}
-              className="px-6 py-4 bg-gradient-to-r from-battery-green to-money-green hover:from-battery-green/90 hover:to-money-green/90 text-white rounded-lg font-heading font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {syncing ? 'Syncing...' : 'Sync Big 3 Retailers'}
-              <div className="text-sm font-normal mt-1">Origin, AGL, EnergyAustralia (~20 min)</div>
-            </button>
+              <button
+                onClick={() => handleSync('agl')}
+                disabled={syncing}
+                className="px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-heading font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {syncing ? 'Syncing...' : 'AGL Energy'}
+                <div className="text-sm font-normal mt-1">~325 plans (~1 min)</div>
+              </button>
 
-            <button
-              onClick={() => handleSync()}
-              disabled={syncing}
-              className="px-6 py-4 bg-gradient-to-r from-electric-yellow to-battery-green hover:from-electric-yellow/90 hover:to-battery-green/90 text-midnight-blue rounded-lg font-heading font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {syncing ? 'Syncing...' : 'Sync Top 10 Retailers'}
-              <div className="text-sm font-normal mt-1">~70-80% coverage (~25 min)</div>
-            </button>
+              <button
+                onClick={() => handleSync('energyaustralia')}
+                disabled={syncing}
+                className="px-6 py-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-heading font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {syncing ? 'Syncing...' : 'EnergyAustralia'}
+                <div className="text-sm font-normal mt-1">~325 plans (~1 min)</div>
+              </button>
+            </div>
+          </div>
 
-            <button
-              onClick={() => {
-                if (confirm('This will sync all 107 retailers and will take 1-2 hours. Continue?')) {
-                  handleSync()
-                }
-              }}
-              disabled={syncing}
-              className="px-6 py-4 bg-gradient-to-r from-midnight-blue to-serious-gray hover:from-midnight-blue/90 hover:to-serious-gray/90 text-white rounded-lg font-heading font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {syncing ? 'Syncing...' : 'Sync ALL 107 Retailers'}
-              <div className="text-sm font-normal mt-1">Complete data (~1-2 hours)</div>
-            </button>
+          {/* Batch Sync Options */}
+          <div>
+            <h3 className="text-lg font-semibold text-midnight-blue mb-3">
+              Batch Sync (May timeout on Vercel)
+            </h3>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <button
+                onClick={() => handleSync('globird')}
+                disabled={syncing}
+                className="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg font-heading font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {syncing ? 'Syncing...' : 'Test: GloBird Energy'}
+                <div className="text-sm font-normal mt-1">~300 plans (~1 min)</div>
+              </button>
+
+              <button
+                onClick={() => handleSync(undefined, true)}
+                disabled={syncing}
+                className="px-6 py-4 bg-gradient-to-r from-battery-green to-money-green hover:from-battery-green/90 hover:to-money-green/90 text-white rounded-lg font-heading font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {syncing ? 'Syncing...' : 'Sync Big 3 Together'}
+                <div className="text-sm font-normal mt-1">⚠️ May timeout (~20 min)</div>
+              </button>
+
+              <button
+                onClick={() => handleSync()}
+                disabled={syncing}
+                className="px-6 py-4 bg-gradient-to-r from-electric-yellow to-battery-green hover:from-electric-yellow/90 hover:to-battery-green/90 text-midnight-blue rounded-lg font-heading font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {syncing ? 'Syncing...' : 'Sync Top 10 Retailers'}
+                <div className="text-sm font-normal mt-1">⚠️ Will timeout (~25 min)</div>
+              </button>
+
+              <button
+                onClick={() => {
+                  if (confirm('This will sync all 107 retailers and will take 1-2 hours. Continue?')) {
+                    handleSync()
+                  }
+                }}
+                disabled={syncing}
+                className="px-6 py-4 bg-gradient-to-r from-midnight-blue to-serious-gray hover:from-midnight-blue/90 hover:to-serious-gray/90 text-white rounded-lg font-heading font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {syncing ? 'Syncing...' : 'Sync ALL 107 Retailers'}
+                <div className="text-sm font-normal mt-1">⚠️ Not for production</div>
+              </button>
+            </div>
           </div>
 
           {syncing && (
