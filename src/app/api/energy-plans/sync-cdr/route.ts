@@ -9,6 +9,8 @@ export async function POST(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const retailerSlug = searchParams.get('retailer')
   const priorityOnly = searchParams.get('priorityOnly') === 'true'
+  const cursor = searchParams.get('cursor') ? parseInt(searchParams.get('cursor')!) : 0
+  const chunkSize = searchParams.get('chunkSize') ? parseInt(searchParams.get('chunkSize')!) : 50
 
   const encoder = new TextEncoder()
 
@@ -48,7 +50,7 @@ export async function POST(request: NextRequest) {
         }
 
         let totalPlansStored = 0
-        const results: { retailer: string; plans: number; error?: string }[] = []
+        const results: { retailer: string; plans: number; totalPlans?: number; isLastChunk?: boolean; error?: string }[] = []
 
         // Sync each retailer
         for (const retailer of retailersToSync) {
@@ -192,14 +194,18 @@ export async function POST(request: NextRequest) {
               continue
             }
 
-            sendProgress(`   📥 Fetching details for ${plansToFetch.length} new/updated plans...`)
+            // CHUNKING: Process only a subset of plans based on cursor
+            const totalPlansToFetch = plansToFetch.length
+            const startIndex = cursor
+            const endIndex = Math.min(cursor + chunkSize, totalPlansToFetch)
+            const plansChunk = plansToFetch.slice(startIndex, endIndex)
+            const isLastChunk = endIndex >= totalPlansToFetch
 
-            // Convert plansToFetch to a Set for O(1) lookup
-            const plansToFetchSet = new Set(plansToFetch)
+            sendProgress(`   📥 Fetching details for plans ${startIndex + 1}-${endIndex} of ${totalPlansToFetch} (chunk ${Math.floor(cursor / chunkSize) + 1})...`)
 
-            // Process plans that need updating (no pagination needed - just iterate the list)
-            for (let i = 0; i < plansToFetch.length; i++) {
-                const planId = plansToFetch[i]
+            // Process plans chunk
+            for (let i = 0; i < plansChunk.length; i++) {
+                const planId = plansChunk[i]
 
                 try {
                   // Fetch plan details using Plan Detail endpoint
@@ -211,7 +217,8 @@ export async function POST(request: NextRequest) {
                   }
 
                   if ((i + 1) % 10 === 0 || i === 0) {
-                    sendProgress(`   📋 Fetching details: ${i + 1}/${plansToFetch.length}...`)
+                    const globalIndex = startIndex + i + 1
+                    sendProgress(`   📋 Fetching details: ${globalIndex}/${totalPlansToFetch}...`)
                   }
 
                   const detailResponse = await fetch(detailEndpoint, {
@@ -372,17 +379,25 @@ export async function POST(request: NextRequest) {
                 }
               }
 
-            sendProgress(`   ✅ ${retailer.name} sync complete:`)
-            sendProgress(`      Total plans from API: ${apiPlanIds.size}`)
-            sendProgress(`      Electricity plans: ${totalElectricityPlans}`)
-            sendProgress(`      New plans: ${newCount}`)
-            sendProgress(`      Updated plans: ${updatedCount}`)
-            sendProgress(`      Stored/Updated: ${storedCount}`)
+            if (isLastChunk) {
+              sendProgress(`   ✅ ${retailer.name} sync complete:`)
+              sendProgress(`      Total plans from API: ${apiPlanIds.size}`)
+              sendProgress(`      Electricity plans: ${totalElectricityPlans}`)
+              sendProgress(`      New plans: ${newCount}`)
+              sendProgress(`      Updated plans: ${updatedCount}`)
+              sendProgress(`      Stored/Updated: ${storedCount}`)
+            } else {
+              sendProgress(`   ⏸️  ${retailer.name} chunk ${Math.floor(cursor / chunkSize) + 1} complete:`)
+              sendProgress(`      Processed: ${endIndex}/${totalPlansToFetch}`)
+              sendProgress(`      Stored in this chunk: ${storedCount}`)
+            }
             totalPlansStored += storedCount
 
             results.push({
               retailer: retailer.name,
-              plans: storedCount
+              plans: storedCount,
+              totalPlans: totalPlansToFetch,
+              isLastChunk
             })
 
           } catch (retailerError) {
@@ -401,14 +416,23 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        sendProgress(`\n✅ Sync complete! Total electricity plans stored: ${totalPlansStored}`)
+        // Check if any retailer has more chunks to process
+        const hasMore = results.some(r => !r.isLastChunk)
+        const nextCursor = hasMore ? cursor + chunkSize : null
 
-        // Send final result
+        if (hasMore) {
+          sendProgress(`\n⏸️  Chunk complete! Continue with next chunk using cursor=${nextCursor}`)
+        } else {
+          sendProgress(`\n✅ Sync complete! Total electricity plans processed: ${totalPlansStored}`)
+        }
+
+        // Send final result (including cursor for frontend to resume)
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-          done: true,
+          done: !hasMore,
           success: true,
           totalPlans: totalPlansStored,
           retailers: results,
+          nextCursor,
           timestamp: new Date().toISOString()
         })}\n\n`))
 

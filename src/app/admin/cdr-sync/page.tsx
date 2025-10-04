@@ -48,15 +48,20 @@ export default function CDRSyncAdmin() {
     }
   }
 
-  const handleSync = async (retailer?: string, priorityOnly?: boolean) => {
-    setSyncing(true)
-    setResults(null)
-    setProgressMessages([])
+  const handleSync = async (retailer?: string, priorityOnly?: boolean, cursor?: number) => {
+    // Only reset state if starting fresh (cursor = 0 or undefined)
+    if (!cursor) {
+      setSyncing(true)
+      setResults(null)
+      setProgressMessages([])
+    }
 
     try {
       const params = new URLSearchParams()
       if (retailer) params.append('retailer', retailer)
       if (priorityOnly) params.append('priorityOnly', 'true')
+      if (cursor) params.append('cursor', cursor.toString())
+      params.append('chunkSize', '50') // Process 50 plans at a time
 
       const url = `/api/energy-plans/sync-cdr${params.toString() ? `?${params}` : ''}`
 
@@ -69,6 +74,7 @@ export default function CDRSyncAdmin() {
       }
 
       let buffer = ''
+      let lastData: any = null
 
       while (true) {
         const { done, value } = await reader.read()
@@ -84,17 +90,9 @@ export default function CDRSyncAdmin() {
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6))
+              lastData = data
 
-              if (data.done) {
-                setResults({
-                  success: data.success,
-                  totalPlans: data.totalPlans,
-                  retailers: data.retailers,
-                  error: data.error,
-                  timestamp: data.timestamp
-                })
-                break
-              } else if (data.message) {
+              if (data.message) {
                 setProgressMessages(prev => [...prev, data.message])
               }
             } catch (parseError) {
@@ -104,14 +102,32 @@ export default function CDRSyncAdmin() {
         }
       }
 
-      // Refresh DB stats after sync
-      await fetchDbStats()
+      // Check if there's more to process
+      if (lastData && !lastData.done && lastData.nextCursor !== null) {
+        // Automatically resume with next chunk
+        setProgressMessages(prev => [...prev, `\n🔄 Resuming with chunk ${Math.floor(lastData.nextCursor / 50) + 1}...\n`])
+        await handleSync(retailer, priorityOnly, lastData.nextCursor)
+      } else {
+        // Final chunk - set results and refresh stats
+        if (lastData) {
+          setResults({
+            success: lastData.success,
+            totalPlans: lastData.totalPlans,
+            retailers: lastData.retailers,
+            error: lastData.error,
+            timestamp: lastData.timestamp
+          })
+        }
+
+        // Refresh DB stats after sync
+        await fetchDbStats()
+        setSyncing(false)
+      }
     } catch (error) {
       setResults({
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       })
-    } finally {
       setSyncing(false)
     }
   }
