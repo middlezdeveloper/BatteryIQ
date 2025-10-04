@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
             // PHASE 1: Quick scan - fetch all plan IDs and lastUpdated timestamps (no details)
             sendProgress(`   🔍 Phase 1: Scanning for changes...`)
             const apiPlanIds = new Set<string>()
-            const apiPlanMeta = new Map<string, { lastUpdated: string; fuelType: string }>()
+            const apiPlanMeta = new Map<string, { lastUpdated: string; fuelType: string; customerType: string }>()
 
             let scanPage = 1
             let hasMoreScanPages = true
@@ -95,7 +95,8 @@ export async function POST(request: NextRequest) {
                 apiPlanIds.add(plan.planId)
                 apiPlanMeta.set(plan.planId, {
                   lastUpdated: plan.lastUpdated || new Date().toISOString(),
-                  fuelType: plan.fuelType
+                  fuelType: plan.fuelType,
+                  customerType: plan.customerType || 'RESIDENTIAL'
                 })
               }
 
@@ -316,6 +317,7 @@ export async function POST(request: NextRequest) {
                       planName: planDetail.displayName || planId,
                       state,
                       fuelType: planMeta.fuelType,
+                      customerType: planMeta.customerType,
                       tariffType,
                       distributors: JSON.stringify(geography.distributors || []),
                       includedPostcodes: geography.includedPostcodes ? JSON.stringify(geography.includedPostcodes) : null,
@@ -345,6 +347,7 @@ export async function POST(request: NextRequest) {
                       planName: planDetail.displayName || planId,
                       state,
                       fuelType: planMeta.fuelType,
+                      customerType: planMeta.customerType,
                       tariffType,
                       planType: 'MARKET',
                       distributors: JSON.stringify(geography.distributors || []),

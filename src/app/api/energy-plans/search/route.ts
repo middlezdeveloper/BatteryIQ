@@ -3,7 +3,7 @@ import { PrismaClient } from '@/generated/prisma'
 
 const prisma = new PrismaClient()
 
-// GET /api/energy-plans/search?postcode=3000&distributorCode=POWERCOR&hasBattery=true&hasVPP=true
+// GET /api/energy-plans/search?postcode=3000&distributorCode=POWERCOR&hasBattery=true&hasVPP=true&customerType=RESIDENTIAL
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -14,11 +14,13 @@ export async function GET(request: NextRequest) {
     const minFeedInTariff = searchParams.get('minFeedIn') ? parseFloat(searchParams.get('minFeedIn')!) : null
     const tariffType = searchParams.get('tariffType')
     const state = searchParams.get('state')
+    const customerType = searchParams.get('customerType') || 'RESIDENTIAL' // Default to residential
 
     // Build where clause
     const where: any = {
       isActive: true,
-      fuelType: 'ELECTRICITY'
+      fuelType: 'ELECTRICITY',
+      customerType // Always filter by customer type (defaults to RESIDENTIAL)
     }
 
     // Filter by state
@@ -194,7 +196,8 @@ export async function GET(request: NextRequest) {
         hasVPP,
         minFeedInTariff,
         tariffType,
-        state
+        state,
+        customerType
       },
       plans: eligiblePlans
     })

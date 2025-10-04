@@ -115,6 +115,7 @@ model EnergyPlan {
   planName            String
   state               String
   fuelType            String               // ELECTRICITY, GAS, DUAL
+  customerType        String               @default("RESIDENTIAL") // RESIDENTIAL, BUSINESS
   tariffType          TariffType
   planType            PlanType             @default(MARKET)
 
