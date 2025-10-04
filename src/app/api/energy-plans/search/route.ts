@@ -27,9 +27,26 @@ export async function GET(request: NextRequest) {
     }
 
     // Filter by distributor if provided
+    // Map distributor codes to possible CDR API names (case-insensitive matching)
     if (distributorCode) {
+      const distributorNameMap: Record<string, string> = {
+        'AUSNET': 'AusNet',
+        'CITIPOWER': 'Citipower',
+        'JEMENA': 'Jemena',
+        'POWERCOR': 'Powercor',
+        'UNITED': 'United',
+        'AUSGRID': 'Ausgrid',
+        'ENDEAVOUR': 'Endeavour',
+        'ESSENTIAL': 'Essential',
+        'ENERGEX': 'Energex',
+        'ERGON': 'Ergon',
+        'SAPN': 'Power Networks'
+      }
+
+      const searchTerm = distributorNameMap[distributorCode] || distributorCode
+
       where.distributors = {
-        contains: distributorCode
+        contains: searchTerm
       }
     }
 
@@ -56,6 +73,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Execute query
+    console.log('🔍 Search query:', JSON.stringify(where, null, 2))
+
     const plans = await prisma.energyPlan.findMany({
       where,
       orderBy: [
@@ -66,6 +85,8 @@ export async function GET(request: NextRequest) {
       ],
       take: 100 // Limit to 100 plans
     })
+
+    console.log(`📊 Found ${plans.length} plans before postcode filtering`)
 
     if (plans.length === 0) {
       return NextResponse.json({
@@ -159,6 +180,8 @@ export async function GET(request: NextRequest) {
     const eligiblePlans = postcodeParam
       ? transformedPlans.filter(p => p.isEligible)
       : transformedPlans
+
+    console.log(`✅ Eligible plans after postcode filter: ${eligiblePlans.length}/${transformedPlans.length}`)
 
     return NextResponse.json({
       success: true,
