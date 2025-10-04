@@ -155,19 +155,20 @@ export async function POST(request: NextRequest) {
                       const timeOfUse = rate.timeOfUse || []
 
                       if (rate.type === 'PEAK') {
-                        peakRate = rateAmount
+                        peakRate = rateAmount ? parseFloat(rateAmount) : null
                         peakTimes = JSON.stringify(timeOfUse)
                       } else if (rate.type === 'SHOULDER') {
-                        shoulderRate = rateAmount
+                        shoulderRate = rateAmount ? parseFloat(rateAmount) : null
                         shoulderTimes = JSON.stringify(timeOfUse)
                       } else if (rate.type === 'OFF_PEAK') {
-                        offPeakRate = rateAmount
+                        offPeakRate = rateAmount ? parseFloat(rateAmount) : null
                         offPeakTimes = JSON.stringify(timeOfUse)
                       }
                     })
                   } else if (tariffPeriod.rateBlockUType === 'singleRate') {
                     const singleRateData = tariffPeriod.singleRate
-                    singleRate = singleRateData?.rates?.[0]?.unitPrice
+                    const rateValue = singleRateData?.rates?.[0]?.unitPrice
+                    singleRate = rateValue ? parseFloat(rateValue) : null
                   }
 
                   // Determine tariff type
@@ -179,9 +180,10 @@ export async function POST(request: NextRequest) {
                   }
 
                   // Extract solar feed-in tariff
-                  const solarFeedInTariff = electricityContract.solarFeedInTariff?.[0]?.payerType === 'RETAILER'
+                  const solarFitValue = electricityContract.solarFeedInTariff?.[0]?.payerType === 'RETAILER'
                     ? electricityContract.solarFeedInTariff[0].tariff?.singleTariff?.rates?.[0]?.unitPrice
                     : null
+                  const solarFeedInTariff = solarFitValue ? parseFloat(solarFitValue) : null
 
                   // Determine state from geography
                   let state = 'UNKNOWN'
@@ -210,7 +212,7 @@ export async function POST(request: NextRequest) {
                       distributors: JSON.stringify(plan.geography?.distributors || []),
                       includedPostcodes: plan.geography?.includedPostcodes ? JSON.stringify(plan.geography.includedPostcodes) : null,
                       excludedPostcodes: plan.geography?.excludedPostcodes ? JSON.stringify(plan.geography.excludedPostcodes) : null,
-                      dailySupplyCharge: electricityContract.dailySupplyCharges || 0,
+                      dailySupplyCharge: electricityContract.dailySupplyCharges ? parseFloat(electricityContract.dailySupplyCharges) : 0,
                       peakRate,
                       peakTimes,
                       shoulderRate,
@@ -240,7 +242,7 @@ export async function POST(request: NextRequest) {
                       distributors: JSON.stringify(plan.geography?.distributors || []),
                       includedPostcodes: plan.geography?.includedPostcodes ? JSON.stringify(plan.geography.includedPostcodes) : null,
                       excludedPostcodes: plan.geography?.excludedPostcodes ? JSON.stringify(plan.geography.excludedPostcodes) : null,
-                      dailySupplyCharge: electricityContract.dailySupplyCharges || 0,
+                      dailySupplyCharge: electricityContract.dailySupplyCharges ? parseFloat(electricityContract.dailySupplyCharges) : 0,
                       peakRate,
                       peakTimes,
                       shoulderRate,
