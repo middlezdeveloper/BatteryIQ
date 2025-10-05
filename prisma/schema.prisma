@@ -154,20 +154,30 @@ model EnergyPlan {
   hasVPP              Boolean              @default(false)
   vppCreditPerYear    Float?               // Annual VPP credit
 
-  // Discounts
-  payOnTimeDiscount   Float?               // Percentage discount
-  directDebitDiscount Float?               // Percentage discount
-  otherDiscounts      String?              // JSON array of other discounts
+  // Discounts (💰 ROI Impact)
+  payOnTimeDiscount   Float?               // Percentage discount (legacy)
+  directDebitDiscount Float?               // Percentage discount (legacy)
+  otherDiscounts      String?              // JSON array of other discounts (legacy)
+  discounts           String?              // JSON array of ALL discounts with full CDR details
 
-  // Fees
-  connectionFee       Float?
-  disconnectionFee    Float?
-  latePaymentFee      Float?
-  paperBillFee        Float?
+  // Incentives (💰 ROI Impact)
+  incentives          String?              // JSON array of incentives (sign-up bonuses, rewards, etc.)
+
+  // Fees (💰 ROI Impact)
+  connectionFee       Float?               // Legacy single value
+  disconnectionFee    Float?               // Legacy single value
+  latePaymentFee      Float?               // Legacy single value
+  paperBillFee        Float?               // Legacy single value
+  fees                String?              // JSON array of ALL fees with full CDR details
 
   // Contract terms
   contractLength      Int?                 // months (null = ongoing)
   exitFees            Float?
+  coolingOffDays      Int?                 // Cooling off period in days
+  billFrequency       String?              // P1M (monthly), P3M (quarterly), etc.
+  paymentOptions      String?              // JSON array of payment methods
+  onExpiryDescription String?              // What happens when contract ends
+  variationTerms      String?              // Terms for rate variations
 
   // Plan features (legacy compatibility)
   greenPower          Boolean              @default(false)
@@ -175,6 +185,12 @@ model EnergyPlan {
   isEVFriendly        Boolean              @default(false)
   hasPromotions       Boolean              @default(false)
   promotionDetails    Json?
+
+  // Green power details (🌱 Feature)
+  greenPowerDetails   String?              // JSON array with scheme details and pricing
+
+  // Controlled loads
+  controlledLoads     String?              // JSON array of controlled load options
 
   // CDR API raw data
   rawData             String               // Full CDR JSON response

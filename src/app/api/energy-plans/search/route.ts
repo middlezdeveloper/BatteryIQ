@@ -111,6 +111,12 @@ export async function GET(request: NextRequest) {
       const includedPostcodes = plan.includedPostcodes ? JSON.parse(plan.includedPostcodes) : []
       const excludedPostcodes = plan.excludedPostcodes ? JSON.parse(plan.excludedPostcodes) : []
       const eligibilityCriteria = plan.eligibilityCriteria ? JSON.parse(plan.eligibilityCriteria) : []
+      const discounts = plan.discounts ? JSON.parse(plan.discounts) : []
+      const incentives = plan.incentives ? JSON.parse(plan.incentives) : []
+      const fees = plan.fees ? JSON.parse(plan.fees) : []
+      const paymentOptions = plan.paymentOptions ? JSON.parse(plan.paymentOptions) : []
+      const greenPowerDetails = plan.greenPowerDetails ? JSON.parse(plan.greenPowerDetails) : []
+      const controlledLoads = plan.controlledLoads ? JSON.parse(plan.controlledLoads) : []
       const peakTimes = plan.peakTimes ? JSON.parse(plan.peakTimes) : []
       const shoulderTimes = plan.shoulderTimes ? JSON.parse(plan.shoulderTimes) : []
       const offPeakTimes = plan.offPeakTimes ? JSON.parse(plan.offPeakTimes) : []
@@ -168,24 +174,34 @@ export async function GET(request: NextRequest) {
         hasVPP: plan.hasVPP,
         vppCreditPerYear: plan.vppCreditPerYear,
 
-        // Discounts
+        // Discounts (legacy + new)
         payOnTimeDiscount: plan.payOnTimeDiscount,
         directDebitDiscount: plan.directDebitDiscount,
+        discounts,
+        incentives,
 
-        // Fees
+        // Fees (legacy + new)
         connectionFee: plan.connectionFee,
         disconnectionFee: plan.disconnectionFee,
         latePaymentFee: plan.latePaymentFee,
         paperBillFee: plan.paperBillFee,
+        fees,
 
         // Contract
         contractLength: plan.contractLength,
         exitFees: plan.exitFees,
+        coolingOffDays: plan.coolingOffDays,
+        billFrequency: plan.billFrequency,
+        paymentOptions,
+        onExpiryDescription: plan.onExpiryDescription,
+        variationTerms: plan.variationTerms,
 
         // Features
         greenPower: plan.greenPower,
+        greenPowerDetails,
         carbonNeutral: plan.carbonNeutral,
         isEVFriendly: plan.isEVFriendly,
+        controlledLoads,
 
         // Tracking
         validFrom: plan.validFrom,

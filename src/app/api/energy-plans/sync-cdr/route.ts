@@ -303,6 +303,46 @@ export async function POST(request: NextRequest) {
                     ? JSON.stringify(eligibilityCriteria)
                     : null
 
+                  // Extract discounts (💰 ROI Impact)
+                  const discountsArray = electricityContract.discounts || []
+                  const discountsJson = discountsArray.length > 0
+                    ? JSON.stringify(discountsArray)
+                    : null
+
+                  // Extract incentives (💰 ROI Impact)
+                  const incentivesArray = electricityContract.incentives || []
+                  const incentivesJson = incentivesArray.length > 0
+                    ? JSON.stringify(incentivesArray)
+                    : null
+
+                  // Extract fees (💰 ROI Impact)
+                  const feesArray = electricityContract.fees || []
+                  const feesJson = feesArray.length > 0
+                    ? JSON.stringify(feesArray)
+                    : null
+
+                  // Extract contract terms
+                  const coolingOffDays = electricityContract.coolingOffDays || null
+                  const billFrequency = electricityContract.billFrequency?.[0] || null
+                  const paymentOptionsArray = electricityContract.paymentOption || []
+                  const paymentOptionsJson = paymentOptionsArray.length > 0
+                    ? JSON.stringify(paymentOptionsArray)
+                    : null
+                  const onExpiryDescription = electricityContract.onExpiryDescription || null
+                  const variationTerms = electricityContract.variation || null
+
+                  // Extract green power details (🌱 Feature)
+                  const greenPowerArray = electricityContract.greenPowerCharges || []
+                  const greenPowerJson = greenPowerArray.length > 0
+                    ? JSON.stringify(greenPowerArray)
+                    : null
+
+                  // Extract controlled loads
+                  const controlledLoadsArray = electricityContract.controlledLoad || []
+                  const controlledLoadsJson = controlledLoadsArray.length > 0
+                    ? JSON.stringify(controlledLoadsArray)
+                    : null
+
                   // Extract geography data from plan detail
                   const geography = planDetail.geography || {}
 
@@ -420,9 +460,19 @@ export async function POST(request: NextRequest) {
                       feedInTariff: solarFeedInTariff,
                       payOnTimeDiscount: electricityContract.discounts?.find((d: any) => d.type === 'PAY_ON_TIME')?.percentage || null,
                       directDebitDiscount: electricityContract.discounts?.find((d: any) => d.type === 'DIRECT_DEBIT')?.percentage || null,
+                      discounts: discountsJson,
+                      incentives: incentivesJson,
+                      fees: feesJson,
                       contractLength: electricityContract.terms?.contractLength || null,
                       exitFees: electricityContract.terms?.exitFees || null,
+                      coolingOffDays,
+                      billFrequency,
+                      paymentOptions: paymentOptionsJson,
+                      onExpiryDescription,
+                      variationTerms,
                       greenPower: !!(electricityContract.greenPowerCharges && electricityContract.greenPowerCharges.length > 0),
+                      greenPowerDetails: greenPowerJson,
+                      controlledLoads: controlledLoadsJson,
                       rawData: JSON.stringify({
                         planId,
                         dailySupplyCharge: tariffPeriod.dailySupplyCharge,
@@ -463,9 +513,19 @@ export async function POST(request: NextRequest) {
                       hasVPP: false,
                       payOnTimeDiscount: electricityContract.discounts?.find((d: any) => d.type === 'PAY_ON_TIME')?.percentage || null,
                       directDebitDiscount: electricityContract.discounts?.find((d: any) => d.type === 'DIRECT_DEBIT')?.percentage || null,
+                      discounts: discountsJson,
+                      incentives: incentivesJson,
+                      fees: feesJson,
                       contractLength: electricityContract.terms?.contractLength || null,
                       exitFees: electricityContract.terms?.exitFees || null,
+                      coolingOffDays,
+                      billFrequency,
+                      paymentOptions: paymentOptionsJson,
+                      onExpiryDescription,
+                      variationTerms,
                       greenPower: !!(electricityContract.greenPowerCharges && electricityContract.greenPowerCharges.length > 0),
+                      greenPowerDetails: greenPowerJson,
+                      controlledLoads: controlledLoadsJson,
                       carbonNeutral: false,
                       isEVFriendly: false,
                       rawData: JSON.stringify({
