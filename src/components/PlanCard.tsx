@@ -110,15 +110,15 @@ export default function PlanCard({ plan }: PlanCardProps) {
             </div>
           )}
 
-          {/* Solar Feed-in Tariff */}
-          {plan.feedInTariff !== null && (
-            <div className="flex justify-between items-center pb-3 border-b">
-              <span className="text-serious-gray">☀️ Solar Feed-in</span>
-              <span className="font-bold text-battery-green">
-                {plan.feedInTariff.toFixed(2)}¢/kWh
-              </span>
-            </div>
-          )}
+          {/* Solar Feed-in Tariff - Always show */}
+          <div className="flex justify-between items-center pb-3 border-b">
+            <span className="text-serious-gray">☀️ Solar Feed-in</span>
+            <span className="font-bold text-battery-green">
+              {plan.feedInTariff !== null && plan.feedInTariff !== undefined
+                ? `${plan.feedInTariff.toFixed(2)}¢/kWh`
+                : 'N/A'}
+            </span>
+          </div>
 
           {/* Battery Incentive */}
           {plan.hasBatteryIncentive && plan.batteryIncentiveValue !== null && (

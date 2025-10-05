@@ -285,6 +285,10 @@ export async function POST(request: NextRequest) {
                     tariffType = TariffType.DEMAND
                   }
 
+                  // Extract daily supply charge (it's an array in CDR API)
+                  const supplyChargeValue = electricityContract.dailySupplyCharges?.[0]?.amount
+                  const dailySupplyCharge = supplyChargeValue ? parseFloat(supplyChargeValue) : 0
+
                   // Extract solar feed-in tariff
                   const solarFitValue = electricityContract.solarFeedInTariff?.[0]?.payerType === 'RETAILER'
                     ? electricityContract.solarFeedInTariff[0].tariff?.singleTariff?.rates?.[0]?.unitPrice
@@ -322,7 +326,7 @@ export async function POST(request: NextRequest) {
                       distributors: JSON.stringify(geography.distributors || []),
                       includedPostcodes: geography.includedPostcodes ? JSON.stringify(geography.includedPostcodes) : null,
                       excludedPostcodes: geography.excludedPostcodes ? JSON.stringify(geography.excludedPostcodes) : null,
-                      dailySupplyCharge: electricityContract.dailySupplyCharges ? parseFloat(electricityContract.dailySupplyCharges) : 0,
+                      dailySupplyCharge,
                       peakRate,
                       peakTimes,
                       shoulderRate,
@@ -353,7 +357,7 @@ export async function POST(request: NextRequest) {
                       distributors: JSON.stringify(geography.distributors || []),
                       includedPostcodes: geography.includedPostcodes ? JSON.stringify(geography.includedPostcodes) : null,
                       excludedPostcodes: geography.excludedPostcodes ? JSON.stringify(geography.excludedPostcodes) : null,
-                      dailySupplyCharge: electricityContract.dailySupplyCharges ? parseFloat(electricityContract.dailySupplyCharges) : 0,
+                      dailySupplyCharge,
                       peakRate,
                       peakTimes,
                       shoulderRate,
