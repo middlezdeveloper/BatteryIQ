@@ -24,9 +24,9 @@ export async function GET(request: NextRequest) {
     const startTime = Date.now()
     const results: { retailer: string; new: number; updated: number; errors: number }[] = []
 
-    // Sync all top retailers (Big 3 + major retailers)
-    // This includes: Origin, AGL, EnergyAustralia, Red Energy, Alinta, Momentum, Powershop, GloBird, CovaU, ENGIE
-    const retailersToSync = TOP_RETAILERS
+    // Sync all retailers (Big 3 + major retailers + all others)
+    // This includes all 111 active retailers from AER March 2025 list
+    const retailersToSync = ALL_RETAILERS
 
     for (const retailer of retailersToSync) {
       console.log(`\n📡 Syncing ${retailer.name}...`)
