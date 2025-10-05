@@ -93,6 +93,13 @@ export async function GET(request: NextRequest) {
     const batteryDischarging = (fuelMix['battery_discharging'] || 0)
     const batteryNet = batteryDischarging - batteryCharging // Positive = discharging, Negative = charging
 
+    // DEBUG: Log solar rooftop raw value
+    console.log(`🔍 DEBUG Solar Rooftop for ${region}:`, {
+      raw_value: fuelMix['solar_rooftop'],
+      all_fuel_types: Object.keys(fuelMix),
+      solar_related: Object.entries(fuelMix).filter(([key]) => key.includes('solar'))
+    })
+
     const aggregated = {
       coal: Math.round((fuelMix['coal_black'] || 0) + (fuelMix['coal_brown'] || 0)),
       biomass: Math.round((fuelMix['bioenergy_biomass'] || 0)),

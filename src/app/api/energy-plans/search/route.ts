@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
         { feedInTariff: 'desc' },
         { retailerName: 'asc' }
       ],
-      take: 100 // Limit to 100 plans
+      take: 500 // Limit to 500 plans (increased from 100 to show more results)
     })
 
     console.log(`📊 Found ${plans.length} plans before postcode filtering`)

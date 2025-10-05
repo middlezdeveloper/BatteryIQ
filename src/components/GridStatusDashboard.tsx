@@ -439,7 +439,7 @@ export default function GridStatusDashboard() {
                     <span className="font-medium">Battery</span>
                   </div>
                   <div className="text-right">
-                    <span className="font-semibold">{gridData.fueltechBreakdown.battery} MW</span>
+                    <span className="font-semibold">{(gridData.fueltechBreakdown.battery / 1000).toFixed(2)} GW</span>
                     <span className="ml-4 text-gray-600">{((gridData.fueltechBreakdown.battery / gridData.totalDemand) * 100).toFixed(0)}%</span>
                   </div>
                 </div>
@@ -465,7 +465,7 @@ export default function GridStatusDashboard() {
                     <span className="font-medium">Gas</span>
                   </div>
                   <div className="text-right">
-                    <span className="font-semibold">{gridData.fueltechBreakdown.gas} MW</span>
+                    <span className="font-semibold">{(gridData.fueltechBreakdown.gas / 1000).toFixed(2)} GW</span>
                     <span className="ml-4 text-gray-600">{((gridData.fueltechBreakdown.gas / gridData.totalDemand) * 100).toFixed(0)}%</span>
                   </div>
                 </div>
@@ -478,7 +478,7 @@ export default function GridStatusDashboard() {
                     <span className="font-medium">Hydro</span>
                   </div>
                   <div className="text-right">
-                    <span className="font-semibold">{gridData.fueltechBreakdown.hydro} MW</span>
+                    <span className="font-semibold">{(gridData.fueltechBreakdown.hydro / 1000).toFixed(2)} GW</span>
                     <span className="ml-4 text-gray-600">{((gridData.fueltechBreakdown.hydro / gridData.totalDemand) * 100).toFixed(0)}%</span>
                   </div>
                 </div>
@@ -491,7 +491,7 @@ export default function GridStatusDashboard() {
                   <span className="font-medium">Solar (Utility)</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-semibold">{gridData.fueltechBreakdown.solar} MW</span>
+                  <span className="font-semibold">{(gridData.fueltechBreakdown.solar / 1000).toFixed(2)} GW</span>
                   <span className="ml-4 text-gray-600">{((gridData.fueltechBreakdown.solar / gridData.totalDemand) * 100).toFixed(0)}%</span>
                 </div>
               </div>
@@ -516,7 +516,7 @@ export default function GridStatusDashboard() {
                     <span className="font-medium">Other</span>
                   </div>
                   <div className="text-right">
-                    <span className="font-semibold">{gridData.fueltechBreakdown.other} MW</span>
+                    <span className="font-semibold">{(gridData.fueltechBreakdown.other / 1000).toFixed(2)} GW</span>
                     <span className="ml-4 text-gray-600">{((gridData.fueltechBreakdown.other / gridData.totalDemand) * 100).toFixed(0)}%</span>
                   </div>
                 </div>
@@ -588,7 +588,7 @@ export default function GridStatusDashboard() {
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="font-semibold">{openElectricityData.fuels.grid_battery} MW</span>
+                  <span className="font-semibold">{(openElectricityData.fuels.grid_battery / 1000).toFixed(2)} GW</span>
                   <span className="ml-4 text-gray-600">{((Math.abs(openElectricityData.fuels.grid_battery) / openElectricityData.totalDemand) * 100).toFixed(1)}%</span>
                 </div>
               </div>
@@ -601,7 +601,7 @@ export default function GridStatusDashboard() {
                     <span className="font-medium">Biomass</span>
                   </div>
                   <div className="text-right">
-                    <span className="font-semibold">{openElectricityData.fuels.biomass} MW</span>
+                    <span className="font-semibold">{(openElectricityData.fuels.biomass / 1000).toFixed(2)} GW</span>
                     <span className="ml-4 text-gray-600">{((openElectricityData.fuels.biomass / openElectricityData.totalDemand) * 100).toFixed(1)}%</span>
                   </div>
                 </div>
@@ -628,7 +628,7 @@ export default function GridStatusDashboard() {
                   <span className="font-medium">Gas</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-semibold">{openElectricityData.fuels.gas} MW</span>
+                  <span className="font-semibold">{(openElectricityData.fuels.gas / 1000).toFixed(2)} GW</span>
                   <span className="ml-4 text-gray-600">{((openElectricityData.fuels.gas / openElectricityData.totalDemand) * 100).toFixed(0)}%</span>
                 </div>
               </div>
@@ -652,7 +652,7 @@ export default function GridStatusDashboard() {
                   <span className="font-medium">Solar (Utility)</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-semibold">{openElectricityData.fuels.solar_utility} MW</span>
+                  <span className="font-semibold">{(openElectricityData.fuels.solar_utility / 1000).toFixed(2)} GW</span>
                   <span className="ml-4 text-gray-600">{((openElectricityData.fuels.solar_utility / openElectricityData.totalDemand) * 100).toFixed(1)}%</span>
                 </div>
               </div>
@@ -664,7 +664,7 @@ export default function GridStatusDashboard() {
                   <span className="font-medium">Solar (Rooftop)</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-semibold">{openElectricityData.fuels.solar_rooftop} MW</span>
+                  <span className="font-semibold">{(openElectricityData.fuels.solar_rooftop / 1000).toFixed(2)} GW</span>
                   <span className="ml-4 text-gray-600">{((openElectricityData.fuels.solar_rooftop / openElectricityData.totalDemand) * 100).toFixed(1)}%</span>
                 </div>
               </div>
@@ -689,7 +689,7 @@ export default function GridStatusDashboard() {
                     <span className="font-medium">Liquid Fuel</span>
                   </div>
                   <div className="text-right">
-                    <span className="font-semibold">{openElectricityData.fuels.distillate} MW</span>
+                    <span className="font-semibold">{(openElectricityData.fuels.distillate / 1000).toFixed(2)} GW</span>
                     <span className="ml-4 text-gray-600">{((openElectricityData.fuels.distillate / openElectricityData.totalDemand) * 100).toFixed(1)}%</span>
                   </div>
                 </div>

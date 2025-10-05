@@ -66,7 +66,7 @@ export default function PlanCard({ plan }: PlanCardProps) {
           <div className="flex justify-between items-center pb-3 border-b">
             <span className="text-serious-gray">Daily Supply Charge</span>
             <span className="font-bold text-midnight-blue">
-              {plan.dailySupplyCharge.toFixed(2)}¢/day
+              {plan.dailySupplyCharge ? `${plan.dailySupplyCharge.toFixed(2)}¢/day` : 'N/A'}
             </span>
           </div>
 
