@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@/generated/prisma'
-import { TOP_RETAILERS } from '@/lib/cdr-retailers'
+import { ALL_RETAILERS } from '@/lib/cdr-retailers'
 
 const prisma = new PrismaClient()
 
