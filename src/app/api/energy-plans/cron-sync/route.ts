@@ -24,10 +24,11 @@ export async function GET(request: NextRequest) {
     const startTime = Date.now()
     const results: { retailer: string; new: number; updated: number; errors: number }[] = []
 
-    // Sync Big 3 retailers individually to avoid timeouts
-    const bigThree = TOP_RETAILERS.filter(r => r.priority === 1)
+    // Sync all top retailers (Big 3 + major retailers)
+    // This includes: Origin, AGL, EnergyAustralia, Red Energy, Alinta, Momentum, Powershop, GloBird, CovaU, ENGIE
+    const retailersToSync = TOP_RETAILERS
 
-    for (const retailer of bigThree) {
+    for (const retailer of retailersToSync) {
       console.log(`\n📡 Syncing ${retailer.name}...`)
 
       try {
