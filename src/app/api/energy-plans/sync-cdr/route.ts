@@ -249,9 +249,9 @@ export async function POST(request: NextRequest) {
                   const tariffPeriod = electricityContract.tariffPeriod?.[0] || {}
 
                   // Extract time-of-use rates
-                  let peakRate = null, shoulderRate = null, offPeakRate = null
-                  let peakTimes = null, shoulderTimes = null, offPeakTimes = null
-                  let singleRate = null
+                  let peakRate: number | null = null, shoulderRate: number | null = null, offPeakRate: number | null = null
+                  let peakTimes: string | null = null, shoulderTimes: string | null = null, offPeakTimes: string | null = null
+                  let singleRate: number | null = null
 
                   if (tariffPeriod.rateBlockUType === 'timeOfUseRates') {
                     const touRates = tariffPeriod.timeOfUseRates || []
@@ -260,13 +260,15 @@ export async function POST(request: NextRequest) {
                       const rateAmount = rate.rates?.[0]?.unitPrice
                       const timeOfUse = rate.timeOfUse || []
 
-                      if (rate.type === 'PEAK') {
+                      // Store first occurrence of each type (some plans have multiple OFF_PEAK periods)
+                      // We keep the first one as it's usually the primary/most expensive rate
+                      if (rate.type === 'PEAK' && !peakRate) {
                         peakRate = rateAmount ? parseFloat(rateAmount) : null
                         peakTimes = JSON.stringify(timeOfUse)
-                      } else if (rate.type === 'SHOULDER') {
+                      } else if (rate.type === 'SHOULDER' && !shoulderRate) {
                         shoulderRate = rateAmount ? parseFloat(rateAmount) : null
                         shoulderTimes = JSON.stringify(timeOfUse)
-                      } else if (rate.type === 'OFF_PEAK') {
+                      } else if (rate.type === 'OFF_PEAK' && !offPeakRate) {
                         offPeakRate = rateAmount ? parseFloat(rateAmount) : null
                         offPeakTimes = JSON.stringify(timeOfUse)
                       }
@@ -285,15 +287,21 @@ export async function POST(request: NextRequest) {
                     tariffType = TariffType.DEMAND
                   }
 
-                  // Extract daily supply charge (it's an array in CDR API)
-                  const supplyChargeValue = electricityContract.dailySupplyCharges?.[0]?.amount
-                  const dailySupplyCharge = supplyChargeValue ? parseFloat(supplyChargeValue) : 0
+                  // Extract daily supply charge from tariffPeriod (singular, string in CDR API)
+                  const supplyChargeValue = tariffPeriod.dailySupplyCharge
+                  const dailySupplyCharge = supplyChargeValue ? parseFloat(supplyChargeValue) : null
 
-                  // Extract solar feed-in tariff
+                  // Extract solar feed-in tariff from electricityContract (not tariffPeriod)
                   const solarFitValue = electricityContract.solarFeedInTariff?.[0]?.payerType === 'RETAILER'
-                    ? electricityContract.solarFeedInTariff[0].tariff?.singleTariff?.rates?.[0]?.unitPrice
+                    ? electricityContract.solarFeedInTariff[0].singleTariff?.rates?.[0]?.unitPrice
                     : null
                   const solarFeedInTariff = solarFitValue ? parseFloat(solarFitValue) : null
+
+                  // Extract eligibility criteria
+                  const eligibilityCriteria = electricityContract.eligibility || []
+                  const eligibilityJson = eligibilityCriteria.length > 0
+                    ? JSON.stringify(eligibilityCriteria)
+                    : null
 
                   // Extract geography data from plan detail
                   const geography = planDetail.geography || {}
@@ -313,6 +321,80 @@ export async function POST(request: NextRequest) {
                     else if (pc >= 2600 && pc <= 2618) state = 'ACT'
                   }
 
+                  // Helper function to generate meaningful display names
+                  const generateDisplayName = (rate: any, index: number): string => {
+                    // Check if CDR API provides a meaningful name (not just "Tariff N")
+                    if (rate.displayName && !rate.displayName.match(/^Tariff \d+$/)) {
+                      return rate.displayName
+                    }
+
+                    // Generate based on type and characteristics
+                    const rateValue = parseFloat(rate.rates?.[0]?.unitPrice || '0')
+                    const type = rate.type || 'UNKNOWN'
+                    const timeWindows = rate.timeOfUse || []
+
+                    // Check for special patterns
+                    const hasEarlyMorning = timeWindows.some((w: any) =>
+                      w.startTime === '00:00' && parseInt(w.endTime?.split(':')[0]) <= 6
+                    )
+                    const hasMidDay = timeWindows.some((w: any) =>
+                      parseInt(w.startTime?.split(':')[0]) >= 11 && parseInt(w.endTime?.split(':')[0]) <= 14
+                    )
+
+                    // Free or near-free rate
+                    if (rateValue < 0.01) {
+                      if (hasMidDay) return 'Super Off-Peak (Solar Sponge)'
+                      if (hasEarlyMorning) return 'EV Charging (Free)'
+                      return 'Super Off-Peak'
+                    }
+
+                    // Very low rate (likely EV charging)
+                    if (rateValue < 0.10 && hasEarlyMorning) {
+                      return 'EV Charging'
+                    }
+
+                    // Standard type-based names with time context
+                    if (type === 'PEAK') return 'Peak'
+                    if (type === 'SHOULDER') {
+                      if (hasEarlyMorning) return 'Shoulder (Night)'
+                      return 'Shoulder'
+                    }
+                    if (type === 'OFF_PEAK') {
+                      if (hasMidDay) return 'Off-Peak (Solar)'
+                      if (hasEarlyMorning) return 'Off-Peak (Night)'
+                      return 'Off-Peak'
+                    }
+
+                    // Fallback to API name or generic
+                    return rate.displayName || `Tariff ${index + 1}`
+                  }
+
+                  // Prepare TariffPeriod records (ALL time-of-use periods with complete fidelity)
+                  const tariffPeriodRecords: Array<{
+                    type: string
+                    displayName: string
+                    rate: number
+                    timeWindows: any[]
+                    sequenceOrder: number
+                    period: string | null
+                  }> = []
+                  if (tariffPeriod.rateBlockUType === 'timeOfUseRates') {
+                    const touRates = tariffPeriod.timeOfUseRates || []
+                    touRates.forEach((rate: any, index: number) => {
+                      const rateAmount = rate.rates?.[0]?.unitPrice
+                      if (rateAmount) {
+                        tariffPeriodRecords.push({
+                          type: rate.type || 'UNKNOWN',
+                          displayName: generateDisplayName(rate, index),
+                          rate: parseFloat(rateAmount),
+                          timeWindows: rate.timeOfUse || [],
+                          sequenceOrder: index,
+                          period: rate.period || null
+                        })
+                      }
+                    })
+                  }
+
                   // Upsert plan into database (reduced rawData - only store plan ID)
                   await prisma.energyPlan.upsert({
                     where: { id: planId },
@@ -326,6 +408,7 @@ export async function POST(request: NextRequest) {
                       distributors: JSON.stringify(geography.distributors || []),
                       includedPostcodes: geography.includedPostcodes ? JSON.stringify(geography.includedPostcodes) : null,
                       excludedPostcodes: geography.excludedPostcodes ? JSON.stringify(geography.excludedPostcodes) : null,
+                      eligibilityCriteria: eligibilityJson,
                       dailySupplyCharge,
                       peakRate,
                       peakTimes,
@@ -340,9 +423,18 @@ export async function POST(request: NextRequest) {
                       contractLength: electricityContract.terms?.contractLength || null,
                       exitFees: electricityContract.terms?.exitFees || null,
                       greenPower: !!(electricityContract.greenPowerCharges && electricityContract.greenPowerCharges.length > 0),
-                      rawData: JSON.stringify({ planId: planId }), // Reduced memory footprint
+                      rawData: JSON.stringify({
+                        planId,
+                        dailySupplyCharge: tariffPeriod.dailySupplyCharge,
+                        solarFeedInTariff: electricityContract.solarFeedInTariff
+                      }), // Debug: capture extraction data
                       isActive: true,
                       lastUpdated: new Date(),
+                      // Delete existing tariff periods and create new ones (complete replacement)
+                      tariffPeriods: {
+                        deleteMany: {},
+                        create: tariffPeriodRecords
+                      }
                     },
                     create: {
                       id: planId,
@@ -357,6 +449,7 @@ export async function POST(request: NextRequest) {
                       distributors: JSON.stringify(geography.distributors || []),
                       includedPostcodes: geography.includedPostcodes ? JSON.stringify(geography.includedPostcodes) : null,
                       excludedPostcodes: geography.excludedPostcodes ? JSON.stringify(geography.excludedPostcodes) : null,
+                      eligibilityCriteria: eligibilityJson,
                       dailySupplyCharge,
                       peakRate,
                       peakTimes,
@@ -375,8 +468,16 @@ export async function POST(request: NextRequest) {
                       greenPower: !!(electricityContract.greenPowerCharges && electricityContract.greenPowerCharges.length > 0),
                       carbonNeutral: false,
                       isEVFriendly: false,
-                      rawData: JSON.stringify({ planId: planId }), // Reduced memory footprint
+                      rawData: JSON.stringify({
+                        planId,
+                        dailySupplyCharge: tariffPeriod.dailySupplyCharge,
+                        solarFeedInTariff: electricityContract.solarFeedInTariff
+                      }), // Debug: capture extraction data
                       isActive: true,
+                      // Create tariff periods for new plans
+                      tariffPeriods: {
+                        create: tariffPeriodRecords
+                      }
                     }
                   })
 

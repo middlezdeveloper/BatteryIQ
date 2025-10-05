@@ -76,6 +76,12 @@ export const TOP_RETAILERS: CDRRetailer[] = [
     slug: 'engie',
     baseUri: 'https://cdr.energymadeeasy.gov.au/engie/',
     priority: 2
+  },
+  {
+    name: 'OVO Energy',
+    slug: 'ovo-energy',
+    baseUri: 'https://cdr.energymadeeasy.gov.au/ovo-energy/',
+    priority: 2
   }
 ]
 

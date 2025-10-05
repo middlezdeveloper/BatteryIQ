@@ -123,20 +123,21 @@ model EnergyPlan {
   distributors        String               // JSON array of distributor codes
   includedPostcodes   String?              // JSON array of included postcodes
   excludedPostcodes   String?              // JSON array of excluded postcodes
+  eligibilityCriteria String?              // JSON array of eligibility requirements (e.g., EV ownership)
 
   // Supply charges
-  dailySupplyCharge   Float                // cents per day
+  dailySupplyCharge   Float?               // $/day - dollars per day (nullable if not available)
 
-  // Usage charges - Time-of-use
-  peakRate            Float?               // c/kWh
+  // Usage charges - Time-of-use (all rates in $/kWh - dollars per kilowatt-hour)
+  peakRate            Float?               // $/kWh
   peakTimes           String?              // JSON array of time periods
-  shoulderRate        Float?               // c/kWh
+  shoulderRate        Float?               // $/kWh
   shoulderTimes       String?              // JSON array of time periods
-  offPeakRate         Float?               // c/kWh
+  offPeakRate         Float?               // $/kWh
   offPeakTimes        String?              // JSON array of time periods
 
   // Usage charges - Single/Block
-  singleRate          Float?               // c/kWh (for flat rate plans)
+  singleRate          Float?               // $/kWh (for flat rate plans)
   blockRates          String?              // JSON array of block rate tiers
 
   // Demand charges
@@ -144,10 +145,10 @@ model EnergyPlan {
   demandWindow        String?              // JSON object describing demand measurement
 
   // Controlled load
-  controlledLoadRate  Float?               // c/kWh
+  controlledLoadRate  Float?               // $/kWh
 
   // Solar & Battery
-  feedInTariff        Float?               // c/kWh (solar feed-in)
+  feedInTariff        Float?               // $/kWh - dollars per kilowatt-hour (solar feed-in)
   hasBatteryIncentive Boolean              @default(false)
   batteryIncentiveValue Float?             // Annual $ value
   hasVPP              Boolean              @default(false)
@@ -184,7 +185,15 @@ model EnergyPlan {
   validTo             DateTime?
   lastUpdated         DateTime             @default(now())
 
+  // 24-hour coverage validation
+  has24HourCoverage   Boolean              @default(false)
+  coverageGaps        String?              // JSON array of uncovered time periods
+  coverageOverlaps    String?              // JSON array of overlapping time periods
+
+  // Relations
+  tariffPeriods       TariffPeriod[]       // Detailed time-of-use periods
   projects            Project[]
+
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
 
@@ -194,6 +203,32 @@ model EnergyPlan {
   @@index([hasVPP])
   @@index([fuelType])
   @@map("energy_plans")
+}
+
+// Tariff periods - captures ALL time-of-use rates with complete fidelity
+model TariffPeriod {
+  id              String       @id @default(cuid())
+  planId          String
+  plan            EnergyPlan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  // Rate information
+  type            String       // PEAK, OFF_PEAK, SHOULDER, etc.
+  displayName     String       // e.g., "Tariff 1", "Super Off-Peak", "EV Charging"
+  rate            Float        // $/kWh - dollars per kilowatt-hour
+
+  // Time windows (JSON array of {days: string[], startTime: string, endTime: string})
+  timeWindows     Json
+
+  // Ordering and metadata
+  sequenceOrder   Int          // Order in which API returned them (for deterministic sorting)
+  period          String?      // ISO 8601 duration (e.g., "P1D" for daily)
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([planId])
+  @@index([planId, sequenceOrder])
+  @@map("tariff_periods")
 }
 
 // Battery hardware specifications

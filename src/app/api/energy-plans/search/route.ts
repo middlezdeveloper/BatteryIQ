@@ -79,6 +79,11 @@ export async function GET(request: NextRequest) {
 
     const plans = await prisma.energyPlan.findMany({
       where,
+      include: {
+        tariffPeriods: {
+          orderBy: { sequenceOrder: 'asc' }
+        }
+      },
       orderBy: [
         { hasBatteryIncentive: 'desc' },
         { hasVPP: 'desc' },
@@ -105,6 +110,7 @@ export async function GET(request: NextRequest) {
       const distributors = plan.distributors ? JSON.parse(plan.distributors) : []
       const includedPostcodes = plan.includedPostcodes ? JSON.parse(plan.includedPostcodes) : []
       const excludedPostcodes = plan.excludedPostcodes ? JSON.parse(plan.excludedPostcodes) : []
+      const eligibilityCriteria = plan.eligibilityCriteria ? JSON.parse(plan.eligibilityCriteria) : []
       const peakTimes = plan.peakTimes ? JSON.parse(plan.peakTimes) : []
       const shoulderTimes = plan.shoulderTimes ? JSON.parse(plan.shoulderTimes) : []
       const offPeakTimes = plan.offPeakTimes ? JSON.parse(plan.offPeakTimes) : []
@@ -134,6 +140,7 @@ export async function GET(request: NextRequest) {
         // Geographic
         distributors,
         isEligible,
+        eligibilityCriteria,
 
         // Supply & Usage
         dailySupplyCharge: plan.dailySupplyCharge,
@@ -144,6 +151,15 @@ export async function GET(request: NextRequest) {
         shoulderTimes,
         offPeakRate: plan.offPeakRate,
         offPeakTimes,
+
+        // Tariff Periods (complete rate schedule with name, time, price)
+        tariffPeriods: plan.tariffPeriods.map(period => ({
+          name: period.displayName,
+          type: period.type,
+          price: period.rate,  // in dollars per kWh
+          timeWindows: period.timeWindows,
+          sequenceOrder: period.sequenceOrder
+        })),
 
         // Solar & Battery
         feedInTariff: plan.feedInTariff,

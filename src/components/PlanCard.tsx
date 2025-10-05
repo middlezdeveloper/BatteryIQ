@@ -24,6 +24,19 @@ interface PlanCardProps {
     contractLength: number | null
     greenPower: boolean
     carbonNeutral: boolean
+    distributors?: string[]
+    eligibilityCriteria?: Array<{
+      type: string
+      description: string
+      information?: string
+    }>
+    tariffPeriods?: Array<{
+      name: string
+      type: string
+      price: number
+      timeWindows: any
+      sequenceOrder: number
+    }>
   }
 }
 
@@ -66,7 +79,7 @@ export default function PlanCard({ plan }: PlanCardProps) {
           <div className="flex justify-between items-center pb-3 border-b">
             <span className="text-serious-gray">Daily Supply Charge</span>
             <span className="font-bold text-midnight-blue">
-              {plan.dailySupplyCharge ? `${plan.dailySupplyCharge.toFixed(2)}¢/day` : 'N/A'}
+              {plan.dailySupplyCharge ? `$${plan.dailySupplyCharge.toFixed(2)}/day` : 'N/A'}
             </span>
           </div>
 
@@ -75,19 +88,52 @@ export default function PlanCard({ plan }: PlanCardProps) {
             <div className="flex justify-between items-center pb-3 border-b">
               <span className="text-serious-gray">Usage Rate</span>
               <span className="font-bold text-midnight-blue">
-                {plan.singleRate.toFixed(2)}¢/kWh
+                ${plan.singleRate.toFixed(2)}/kWh
               </span>
             </div>
           )}
 
-          {plan.tariffType === 'TIME_OF_USE' && (
+          {plan.tariffType === 'TIME_OF_USE' && plan.tariffPeriods && plan.tariffPeriods.length > 0 ? (
+            <div className="space-y-2">
+              <div className="text-sm font-semibold text-serious-gray mb-2">Time of Use Rates</div>
+              {plan.tariffPeriods.map((period, index) => {
+                // Determine color based on type
+                const colorClass = period.type === 'PEAK' ? 'text-red-600' :
+                                   period.type === 'SHOULDER' ? 'text-orange-600' :
+                                   'text-green-600'
+
+                // Format time windows
+                const formatTimeWindows = (windows: any) => {
+                  if (!Array.isArray(windows) || windows.length === 0) return ''
+                  return windows.map((w: any) => {
+                    const days = Array.isArray(w.days) ? w.days.join(', ') : 'All days'
+                    return `${w.startTime}-${w.endTime}`
+                  }).join(', ')
+                }
+
+                return (
+                  <div key={index} className="text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-serious-gray">{period.name}</span>
+                      <span className={`font-semibold ${colorClass}`}>
+                        ${period.price.toFixed(2)}/kWh
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {formatTimeWindows(period.timeWindows)}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : plan.tariffType === 'TIME_OF_USE' && (
             <div className="space-y-2">
               <div className="text-sm font-semibold text-serious-gray mb-2">Time of Use Rates</div>
               {plan.peakRate !== null && (
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-serious-gray">Peak</span>
                   <span className="font-semibold text-red-600">
-                    {plan.peakRate.toFixed(2)}¢/kWh
+                    ${plan.peakRate.toFixed(2)}/kWh
                   </span>
                 </div>
               )}
@@ -95,7 +141,7 @@ export default function PlanCard({ plan }: PlanCardProps) {
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-serious-gray">Shoulder</span>
                   <span className="font-semibold text-orange-600">
-                    {plan.shoulderRate.toFixed(2)}¢/kWh
+                    ${plan.shoulderRate.toFixed(2)}/kWh
                   </span>
                 </div>
               )}
@@ -103,7 +149,7 @@ export default function PlanCard({ plan }: PlanCardProps) {
                 <div className="flex justify-between items-center text-sm pb-3 border-b">
                   <span className="text-serious-gray">Off-Peak</span>
                   <span className="font-semibold text-green-600">
-                    {plan.offPeakRate.toFixed(2)}¢/kWh
+                    ${plan.offPeakRate.toFixed(2)}/kWh
                   </span>
                 </div>
               )}
@@ -115,7 +161,7 @@ export default function PlanCard({ plan }: PlanCardProps) {
             <span className="text-serious-gray">☀️ Solar Feed-in</span>
             <span className="font-bold text-battery-green">
               {plan.feedInTariff !== null && plan.feedInTariff !== undefined
-                ? `${plan.feedInTariff.toFixed(2)}¢/kWh`
+                ? `$${plan.feedInTariff.toFixed(2)}/kWh`
                 : 'N/A'}
             </span>
           </div>
@@ -187,6 +233,22 @@ export default function PlanCard({ plan }: PlanCardProps) {
               <span className="text-serious-gray">State</span>
               <span className="text-midnight-blue font-medium">{plan.state}</span>
             </div>
+            {plan.distributors && plan.distributors.length > 0 && (
+              <div className="flex justify-between">
+                <span className="text-serious-gray">Distributors</span>
+                <span className="text-midnight-blue font-medium">{plan.distributors.join(', ')}</span>
+              </div>
+            )}
+            {plan.eligibilityCriteria && plan.eligibilityCriteria.length > 0 && (
+              <div className="space-y-1">
+                <span className="text-serious-gray text-xs">Eligibility Requirements:</span>
+                {plan.eligibilityCriteria.map((criteria, index) => (
+                  <div key={index} className="text-xs text-orange-600 font-medium">
+                    ⚠️ {criteria.description || criteria.information}
+                  </div>
+                ))}
+              </div>
+            )}
             {plan.carbonNeutral && (
               <div className="flex justify-between">
                 <span className="text-serious-gray">Carbon Neutral</span>
