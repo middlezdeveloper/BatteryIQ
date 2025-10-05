@@ -1,6 +1,8 @@
 // DMO (Default Market Offer) and VDO (Victorian Default Offer) tariff data
 // Based on official AER and ESC pricing for 2024-25
 
+import { PlanType, TariffType } from '@/generated/prisma'
+
 interface TimeOfUseSchedule {
   peak: {
     rate: number // c/kWh
@@ -29,8 +31,8 @@ interface TariffData {
   planName: string
   state: string
   distributor: string
-  planType: 'DMO' | 'VDO'
-  tariffType: 'FLAT' | 'TIME_OF_USE'
+  planType: PlanType
+  tariffType: TariffType
 
   // Flat rate (if applicable)
   flatRate?: number // c/kWh
@@ -62,8 +64,8 @@ export const DMO_TARIFFS_2024_25: TariffData[] = [
     planName: 'DMO Flat Rate',
     state: 'NSW',
     distributor: 'Endeavour Energy',
-    planType: 'DMO',
-    tariffType: 'FLAT',
+    planType: PlanType.DMO,
+    tariffType: TariffType.FLAT,
     flatRate: 32.35,
     dailySupplyCharge: 104.5,
     feedInTariff: 5.0,
@@ -76,8 +78,8 @@ export const DMO_TARIFFS_2024_25: TariffData[] = [
     planName: 'DMO Time of Use',
     state: 'NSW',
     distributor: 'Endeavour Energy',
-    planType: 'DMO',
-    tariffType: 'TIME_OF_USE',
+    planType: PlanType.DMO,
+    tariffType: TariffType.TIME_OF_USE,
     peakRate: 41.15,
     offPeakRate: 23.55,
     dailySupplyCharge: 104.5,
@@ -105,8 +107,8 @@ export const DMO_TARIFFS_2024_25: TariffData[] = [
     planName: 'DMO Flat Rate',
     state: 'NSW',
     distributor: 'Essential Energy',
-    planType: 'DMO',
-    tariffType: 'FLAT',
+    planType: PlanType.DMO,
+    tariffType: TariffType.FLAT,
     flatRate: 30.05,
     dailySupplyCharge: 107.8,
     feedInTariff: 5.0,
@@ -121,8 +123,8 @@ export const DMO_TARIFFS_2024_25: TariffData[] = [
     planName: 'DMO Flat Rate',
     state: 'QLD',
     distributor: 'Energex',
-    planType: 'DMO',
-    tariffType: 'FLAT',
+    planType: PlanType.DMO,
+    tariffType: TariffType.FLAT,
     flatRate: 28.46,
     dailySupplyCharge: 122.1,
     feedInTariff: 7.0,
@@ -135,8 +137,8 @@ export const DMO_TARIFFS_2024_25: TariffData[] = [
     planName: 'DMO Time of Use',
     state: 'QLD',
     distributor: 'Energex',
-    planType: 'DMO',
-    tariffType: 'TIME_OF_USE',
+    planType: PlanType.DMO,
+    tariffType: TariffType.TIME_OF_USE,
     peakRate: 33.96,
     offPeakRate: 23.16,
     shoulderRate: 28.46,
@@ -170,8 +172,8 @@ export const DMO_TARIFFS_2024_25: TariffData[] = [
     planName: 'DMO Flat Rate',
     state: 'SA',
     distributor: 'SA Power Networks',
-    planType: 'DMO',
-    tariffType: 'FLAT',
+    planType: PlanType.DMO,
+    tariffType: TariffType.FLAT,
     flatRate: 40.84,
     dailySupplyCharge: 102.7,
     feedInTariff: 6.0,
@@ -184,8 +186,8 @@ export const DMO_TARIFFS_2024_25: TariffData[] = [
     planName: 'DMO Time of Use',
     state: 'SA',
     distributor: 'SA Power Networks',
-    planType: 'DMO',
-    tariffType: 'TIME_OF_USE',
+    planType: PlanType.DMO,
+    tariffType: TariffType.TIME_OF_USE,
     peakRate: 50.04,
     offPeakRate: 31.64,
     dailySupplyCharge: 102.7,
@@ -216,8 +218,8 @@ export const VDO_TARIFFS_2024_25: TariffData[] = [
     planName: 'VDO Flat Rate',
     state: 'VIC',
     distributor: 'CitiPower',
-    planType: 'VDO',
-    tariffType: 'FLAT',
+    planType: PlanType.VDO,
+    tariffType: TariffType.FLAT,
     flatRate: 29.26,
     dailySupplyCharge: 123.1,
     feedInTariff: 6.7,
@@ -230,8 +232,8 @@ export const VDO_TARIFFS_2024_25: TariffData[] = [
     planName: 'VDO Time of Use',
     state: 'VIC',
     distributor: 'CitiPower',
-    planType: 'VDO',
-    tariffType: 'TIME_OF_USE',
+    planType: PlanType.VDO,
+    tariffType: TariffType.TIME_OF_USE,
     peakRate: 35.63,
     offPeakRate: 20.04,
     shoulderRate: 26.84,
@@ -265,8 +267,8 @@ export const VDO_TARIFFS_2024_25: TariffData[] = [
     planName: 'VDO Flat Rate',
     state: 'VIC',
     distributor: 'AusNet Services',
-    planType: 'VDO',
-    tariffType: 'FLAT',
+    planType: PlanType.VDO,
+    tariffType: TariffType.FLAT,
     flatRate: 27.72,
     dailySupplyCharge: 116.2,
     feedInTariff: 6.7,

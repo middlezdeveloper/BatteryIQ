@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { PrismaClient, TariffType } from '@/generated/prisma'
+import { PrismaClient, TariffType, PlanType } from '@/generated/prisma'
 import { TOP_RETAILERS, CDR_CONFIG, getRetailerEndpoint, type CDRRetailer } from '@/lib/cdr-retailers'
 
 const prisma = new PrismaClient()
@@ -353,7 +353,7 @@ export async function POST(request: NextRequest) {
                       fuelType: planMeta.fuelType,
                       customerType: planMeta.customerType,
                       tariffType,
-                      planType: 'MARKET',
+                      planType: PlanType.MARKET,
                       distributors: JSON.stringify(geography.distributors || []),
                       includedPostcodes: geography.includedPostcodes ? JSON.stringify(geography.includedPostcodes) : null,
                       excludedPostcodes: geography.excludedPostcodes ? JSON.stringify(geography.excludedPostcodes) : null,
