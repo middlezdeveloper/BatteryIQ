@@ -63,7 +63,7 @@ interface PlanCardProps {
     }>
     coolingOffDays?: number | null
     billFrequency?: string | null
-    paymentOptions?: Array<{
+    paymentOptions?: Array<string | {
       paymentInstrumentType: string
       detail?: string
     }>
@@ -398,7 +398,7 @@ export default function PlanCard({ plan }: PlanCardProps) {
               <div className="space-y-1 pt-3 border-t">
                 <div className="text-sm font-semibold text-midnight-blue">💳 Payment Options</div>
                 <div className="text-xs text-gray-700">
-                  {plan.paymentOptions.map(opt => opt.paymentInstrumentType.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())).join(', ')}
+                  {plan.paymentOptions.map(opt => typeof opt === 'string' ? opt.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) : opt.paymentInstrumentType?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())).join(', ')}
                 </div>
               </div>
             )}
