@@ -235,11 +235,14 @@ export default function SyncStatusPage() {
   }
 
   // Sync a single retailer with parallel chunk processing
-  const syncSingleRetailer = async (retailerSlug: string, startTime: Date) => {
+  const syncSingleRetailer = async (retailerSlug: string, startTime: Date, retailerBatchSize: number) => {
     let cursor: number | null = 0
     let totalPlansProcessed = 0
     let activeChunks = []
-    const maxParallelChunks = 5 // Process 5 chunks at a time (infinite loop fixed, parallelization is safe)
+    // Dynamically calculate max parallel chunks based on retailer batch size
+    // Target: 180 concurrent operations (90% of 200 connection pool)
+    // Formula: 180 / (retailerBatchSize * PARALLEL_BATCH_SIZE)
+    const maxParallelChunks = Math.max(1, Math.floor(180 / (retailerBatchSize * 20)))
 
     // Process all chunks in parallel batches from the start
     try {
@@ -254,7 +257,7 @@ export default function SyncStatusPage() {
         }
 
         setMessages(prev => [...prev, {
-          message: `[${retailerSlug}] 🔄 Processing ${chunkBatch.length} chunks in parallel...`,
+          message: `[${retailerSlug}] 🔄 Processing ${chunkBatch.length} chunks in parallel (max ${maxParallelChunks} chunks per retailer)...`,
           timestamp: new Date()
         }])
 
@@ -372,6 +375,7 @@ export default function SyncStatusPage() {
         }
 
         const batch = batches[i]
+        const currentBatchSize = batch.length
         setMessages(prev => [...prev, {
           message: `📦 Processing batch ${i + 1}/${batches.length}: ${batch.join(', ')}`,
           timestamp: new Date()
@@ -379,7 +383,7 @@ export default function SyncStatusPage() {
 
         // Run batch in parallel
         const batchResults = await Promise.all(
-          batch.map(retailer => syncSingleRetailer(retailer, startTime))
+          batch.map(retailer => syncSingleRetailer(retailer, startTime, currentBatchSize))
         )
 
         // Sum up results
