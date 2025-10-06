@@ -31,6 +31,14 @@ interface SyncHistoryEntry {
   duration: string
 }
 
+interface RetailerProgress {
+  retailer: string
+  status: 'pending' | 'running' | 'completed' | 'failed'
+  plansProcessed: number
+  totalPlans: number
+  currentChunk: number
+}
+
 export default function SyncStatusPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
@@ -44,6 +52,7 @@ export default function SyncStatusPage() {
   const [showRetailerDropdown, setShowRetailerDropdown] = useState(false)
   const [syncHistory, setSyncHistory] = useState<SyncHistoryEntry[]>([])
   const [syncStartTime, setSyncStartTime] = useState<Date | null>(null)
+  const [retailerProgress, setRetailerProgress] = useState<RetailerProgress[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -106,6 +115,119 @@ export default function SyncStatusPage() {
     scrollToBottom()
   }, [messages])
 
+  // Sync a single retailer with auto-continue for all chunks
+  const syncSingleRetailer = async (retailerSlug: string, startTime: Date) => {
+    let cursor = 0
+    let totalPlansProcessed = 0
+    let chunkCount = 0
+
+    while (cursor !== null) {
+      chunkCount++
+      const params = new URLSearchParams()
+      params.set('retailer', retailerSlug)
+      params.set('chunkSize', chunkSize)
+      params.set('cursor', cursor.toString())
+      if (forceSync) params.set('forceSync', 'true')
+
+      const url = `/api/energy-plans/sync-cdr?${params.toString()}`
+
+      try {
+        const response = await fetch(url, { method: 'POST' })
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
+
+        const reader = response.body?.getReader()
+        const decoder = new TextDecoder()
+
+        if (!reader) {
+          throw new Error('No response body')
+        }
+
+        let chunkResult: SyncResult | null = null
+
+        while (true) {
+          const { done, value } = await reader.read()
+
+          if (done) break
+
+          const chunk = decoder.decode(value)
+          const lines = chunk.split('\n\n')
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6))
+
+                if (data.message) {
+                  setMessages(prev => [...prev, {
+                    message: `[${retailerSlug}] ${data.message}`,
+                    timestamp: new Date()
+                  }])
+                }
+
+                if (data.done !== undefined) {
+                  chunkResult = data
+                }
+              } catch (e) {
+                console.error('Failed to parse SSE data:', e)
+              }
+            }
+          }
+        }
+
+        // Check if we should continue to next chunk
+        if (chunkResult?.nextCursor !== undefined && chunkResult.nextCursor !== null) {
+          cursor = chunkResult.nextCursor
+          totalPlansProcessed += chunkResult.totalPlans || 0
+          setMessages(prev => [...prev, {
+            message: `[${retailerSlug}] 🔄 Auto-continuing to chunk ${chunkCount + 1} (cursor: ${cursor})...`,
+            timestamp: new Date()
+          }])
+        } else {
+          // Done with this retailer
+          cursor = null as any
+          totalPlansProcessed += chunkResult?.totalPlans || 0
+
+          const endTime = new Date()
+          const durationMs = endTime.getTime() - startTime.getTime()
+          const durationStr = `${Math.floor(durationMs / 1000)}s`
+
+          addToHistory(
+            retailerSlug,
+            chunkResult?.success || false,
+            totalPlansProcessed,
+            durationStr
+          )
+
+          setMessages(prev => [...prev, {
+            message: `[${retailerSlug}] ✅ Complete! ${totalPlansProcessed} plans in ${durationStr}`,
+            timestamp: new Date()
+          }])
+
+          return { success: true, totalPlans: totalPlansProcessed }
+        }
+      } catch (error) {
+        console.error(`Sync error for ${retailerSlug}:`, error)
+        setMessages(prev => [...prev, {
+          message: `[${retailerSlug}] ❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          timestamp: new Date()
+        }])
+
+        const endTime = new Date()
+        const durationMs = endTime.getTime() - startTime.getTime()
+        const durationStr = `${Math.floor(durationMs / 1000)}s`
+        addToHistory(retailerSlug, false, 0, durationStr)
+
+        return { success: false, totalPlans: 0 }
+      }
+    }
+
+    return { success: false, totalPlans: 0 }
+  }
+
+  // Main sync function with parallel processing
   const startSync = async () => {
     setMessages([])
     setResult(null)
@@ -113,78 +235,65 @@ export default function SyncStatusPage() {
     const startTime = new Date()
     setSyncStartTime(startTime)
 
-    const params = new URLSearchParams()
-    // Use selected retailers if any, otherwise sync all
-    const retailerParam = selectedRetailers.length > 0
-      ? selectedRetailers.join(',')
-      : 'ALL'
-    if (selectedRetailers.length > 0) {
-      params.set('retailer', selectedRetailers[0]) // For now, process first selected
-    }
-    params.set('chunkSize', chunkSize)
-    if (forceSync) params.set('forceSync', 'true')
+    // Determine which retailers to sync
+    const retailersToSync = selectedRetailers.length > 0
+      ? selectedRetailers
+      : ALL_RETAILERS.map(r => r.slug)
 
-    const url = `/api/energy-plans/sync-cdr?${params.toString()}`
+    setMessages(prev => [...prev, {
+      message: `🚀 Starting parallel sync for ${retailersToSync.length} retailers (${retailersToSync.length > 5 ? '5' : retailersToSync.length} at a time)...`,
+      timestamp: new Date()
+    }])
 
     try {
-      const response = await fetch(url, { method: 'POST' })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      // Process retailers in batches of 5 for parallel execution
+      const batchSize = 5
+      const batches = []
+      for (let i = 0; i < retailersToSync.length; i += batchSize) {
+        batches.push(retailersToSync.slice(i, i + batchSize))
       }
 
-      const reader = response.body?.getReader()
-      const decoder = new TextDecoder()
+      let totalPlansAllRetailers = 0
 
-      if (!reader) {
-        throw new Error('No response body')
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i]
+        setMessages(prev => [...prev, {
+          message: `📦 Processing batch ${i + 1}/${batches.length}: ${batch.join(', ')}`,
+          timestamp: new Date()
+        }])
+
+        // Run batch in parallel
+        const batchResults = await Promise.all(
+          batch.map(retailer => syncSingleRetailer(retailer, startTime))
+        )
+
+        // Sum up results
+        totalPlansAllRetailers += batchResults.reduce((sum, r) => sum + r.totalPlans, 0)
+
+        setMessages(prev => [...prev, {
+          message: `✅ Batch ${i + 1} complete! Total so far: ${totalPlansAllRetailers} plans`,
+          timestamp: new Date()
+        }])
       }
 
-      while (true) {
-        const { done, value } = await reader.read()
+      const endTime = new Date()
+      const durationMs = endTime.getTime() - startTime.getTime()
+      const durationStr = `${Math.floor(durationMs / 1000)}s`
 
-        if (done) {
-          setIsRunning(false)
-          break
-        }
+      setResult({
+        done: true,
+        success: true,
+        totalPlans: totalPlansAllRetailers,
+        timestamp: endTime.toISOString()
+      })
 
-        const chunk = decoder.decode(value)
-        const lines = chunk.split('\n\n')
+      setMessages(prev => [...prev, {
+        message: `🎉 All syncs complete! ${totalPlansAllRetailers} total plans in ${durationStr}`,
+        timestamp: new Date()
+      }])
 
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6))
+      setIsRunning(false)
 
-              if (data.message) {
-                setMessages(prev => [...prev, {
-                  message: data.message,
-                  timestamp: new Date()
-                }])
-              }
-
-              if (data.done !== undefined) {
-                setResult(data)
-                if (data.done) {
-                  setIsRunning(false)
-                  // Add to history
-                  const endTime = new Date()
-                  const durationMs = endTime.getTime() - startTime.getTime()
-                  const durationStr = `${Math.floor(durationMs / 1000)}s`
-                  addToHistory(
-                    retailerParam,
-                    data.success || false,
-                    data.totalPlans || 0,
-                    durationStr
-                  )
-                }
-              }
-            } catch (e) {
-              console.error('Failed to parse SSE data:', e)
-            }
-          }
-        }
-      }
     } catch (error) {
       console.error('Sync error:', error)
       setMessages(prev => [...prev, {
@@ -192,11 +301,6 @@ export default function SyncStatusPage() {
         timestamp: new Date()
       }])
       setIsRunning(false)
-      // Add failed sync to history
-      const endTime = new Date()
-      const durationMs = endTime.getTime() - startTime.getTime()
-      const durationStr = `${Math.floor(durationMs / 1000)}s`
-      addToHistory(retailerParam, false, 0, durationStr)
     }
   }
 
@@ -396,6 +500,17 @@ export default function SyncStatusPage() {
           >
             {isRunning ? '⏳ Sync Running...' : '▶️ Start Sync'}
           </button>
+
+          {/* Parallel Sync Info */}
+          {isRunning && (selectedRetailers.length > 1 || selectedRetailers.length === 0) && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-blue-800">
+                <span className="font-semibold">⚡ Parallel Processing Active</span>
+                <span>•</span>
+                <span>Processing up to 5 retailers simultaneously</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Progress Bar */}
