@@ -55,6 +55,7 @@ export default function SyncStatusPage() {
   const [syncStartTime, setSyncStartTime] = useState<Date | null>(null)
   const [retailerProgress, setRetailerProgress] = useState<RetailerProgress[]>([])
   const [overallProgress, setOverallProgress] = useState({ processed: 0, total: 0 })
+  const [currentTime, setCurrentTime] = useState(new Date())
   const cancelSyncRef = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -66,6 +67,17 @@ export default function SyncStatusPage() {
       setSyncHistory(JSON.parse(history))
     }
   }, [])
+
+  // Update current time every second when sync is running
+  useEffect(() => {
+    if (!isRunning) return
+
+    const interval = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [isRunning])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -449,10 +461,10 @@ export default function SyncStatusPage() {
 
     const percentage = (processed / total) * 100
 
-    // Calculate elapsed time and estimate remaining
-    const elapsed = syncStartTime ? (new Date().getTime() - syncStartTime.getTime()) / 1000 : 0
+    // Calculate elapsed time and estimate remaining (using currentTime for smooth updates)
+    const elapsed = syncStartTime ? (currentTime.getTime() - syncStartTime.getTime()) / 1000 : 0
     const rate = processed > 0 ? elapsed / processed : 0.35
-    const remaining = total > processed ? (total - processed) * rate : 0
+    const remaining = (total > processed && processed > 0) ? (total - processed) * rate : 0
 
     // Format time as MM:SS
     const formatTime = (seconds: number) => {
