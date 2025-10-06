@@ -53,6 +53,7 @@ export default function SyncStatusPage() {
   const [syncHistory, setSyncHistory] = useState<SyncHistoryEntry[]>([])
   const [syncStartTime, setSyncStartTime] = useState<Date | null>(null)
   const [retailerProgress, setRetailerProgress] = useState<RetailerProgress[]>([])
+  const [overallProgress, setOverallProgress] = useState({ processed: 0, total: 0 })
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -115,14 +116,9 @@ export default function SyncStatusPage() {
     scrollToBottom()
   }, [messages])
 
-  // Sync a single retailer with auto-continue for all chunks
-  const syncSingleRetailer = async (retailerSlug: string, startTime: Date) => {
-    let cursor = 0
-    let totalPlansProcessed = 0
-    let chunkCount = 0
-
-    while (cursor !== null) {
-      chunkCount++
+  // Process a single chunk for a retailer
+  const processSingleChunk = async (retailerSlug: string, cursor: number, chunkSize: string, forceSync: boolean) => {
+    try {
       const params = new URLSearchParams()
       params.set('retailer', retailerSlug)
       params.set('chunkSize', chunkSize)
@@ -131,75 +127,138 @@ export default function SyncStatusPage() {
 
       const url = `/api/energy-plans/sync-cdr?${params.toString()}`
 
-      try {
-        const response = await fetch(url, { method: 'POST' })
+      const response = await fetch(url, { method: 'POST' })
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-        }
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+      if (!reader) throw new Error('No response body')
 
-        const reader = response.body?.getReader()
-        const decoder = new TextDecoder()
+      let chunkResult: SyncResult | null = null
+      let newPlansInChunk = 0
 
-        if (!reader) {
-          throw new Error('No response body')
-        }
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
 
-        let chunkResult: SyncResult | null = null
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n\n')
 
-        while (true) {
-          const { done, value } = await reader.read()
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6))
 
-          if (done) break
+              if (data.message) {
+                setMessages(prev => [...prev, {
+                  message: `[${retailerSlug}:${cursor}] ${data.message}`,
+                  timestamp: new Date()
+                }])
 
-          const chunk = decoder.decode(value)
-          const lines = chunk.split('\n\n')
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6))
-
-                if (data.message) {
-                  setMessages(prev => [...prev, {
-                    message: `[${retailerSlug}] ${data.message}`,
-                    timestamp: new Date()
-                  }])
+                const newPlansMatch = data.message.match(/🆕 New plans: (\d+)/)
+                if (newPlansMatch) {
+                  newPlansInChunk = parseInt(newPlansMatch[1])
                 }
-
-                if (data.done !== undefined) {
-                  chunkResult = data
-                }
-              } catch (e) {
-                console.error('Failed to parse SSE data:', e)
               }
+
+              if (data.done !== undefined) {
+                chunkResult = data
+              }
+            } catch (e) {
+              console.error('Failed to parse SSE data:', e)
             }
           }
         }
+      }
 
-        // Check if we should continue to next chunk
-        if (chunkResult?.nextCursor !== undefined && chunkResult.nextCursor !== null) {
-          cursor = chunkResult.nextCursor
-          totalPlansProcessed += chunkResult.totalPlans || 0
-          setMessages(prev => [...prev, {
-            message: `[${retailerSlug}] 🔄 Auto-continuing to chunk ${chunkCount + 1} (cursor: ${cursor})...`,
-            timestamp: new Date()
-          }])
-        } else {
-          // Done with this retailer
-          cursor = null as any
-          totalPlansProcessed += chunkResult?.totalPlans || 0
+      return {
+        nextCursor: chunkResult?.nextCursor,
+        plansProcessed: chunkResult?.totalPlans || 0,
+        newPlansInChunk,
+        success: chunkResult?.success || false
+      }
+    } catch (error) {
+      console.error(`Error processing chunk ${cursor} for ${retailerSlug}:`, error)
+      return {
+        nextCursor: null,
+        plansProcessed: 0,
+        newPlansInChunk: 0,
+        success: false
+      }
+    }
+  }
 
+  // Sync a single retailer with parallel chunk processing
+  const syncSingleRetailer = async (retailerSlug: string, startTime: Date) => {
+    let cursor: number | null = 0
+    let totalPlansProcessed = 0
+    let activeChunks = []
+    const maxParallelChunks = 10 // Process 10 chunks at a time per retailer
+
+    // First, get the initial chunk to know total plans
+    try {
+      const firstChunk = await processSingleChunk(retailerSlug, 0, chunkSize, forceSync)
+      totalPlansProcessed += firstChunk.plansProcessed
+
+      setOverallProgress(prev => ({
+        ...prev,
+        processed: prev.processed + firstChunk.plansProcessed
+      }))
+
+      if (!firstChunk.nextCursor) {
+        // Only one chunk needed
+        const endTime = new Date()
+        const durationMs = endTime.getTime() - startTime.getTime()
+        const durationStr = `${Math.floor(durationMs / 1000)}s`
+        addToHistory(retailerSlug, firstChunk.success, totalPlansProcessed, durationStr)
+        return { success: true, totalPlans: totalPlansProcessed }
+      }
+
+      // Process remaining chunks in parallel batches
+      cursor = firstChunk.nextCursor
+
+      while (cursor !== null) {
+        // Create batch of parallel chunk requests
+        const chunkBatch = []
+        for (let i = 0; i < maxParallelChunks && cursor !== null; i++) {
+          chunkBatch.push({ cursor, index: i })
+          cursor += parseInt(chunkSize) // Estimate next cursor
+        }
+
+        setMessages(prev => [...prev, {
+          message: `[${retailerSlug}] 🔄 Processing ${chunkBatch.length} chunks in parallel...`,
+          timestamp: new Date()
+        }])
+
+        // Process this batch of chunks in parallel
+        const batchResults: Awaited<ReturnType<typeof processSingleChunk>>[] = await Promise.all(
+          chunkBatch.map(({ cursor: chunkCursor }) =>
+            processSingleChunk(retailerSlug, chunkCursor, chunkSize, forceSync)
+          )
+        )
+
+        // Accumulate results
+        for (const result of batchResults) {
+          totalPlansProcessed += result.plansProcessed
+          setOverallProgress(prev => ({
+            ...prev,
+            processed: prev.processed + result.plansProcessed
+          }))
+        }
+
+        // Check if we need more chunks (use last result's nextCursor)
+        const lastResult: Awaited<ReturnType<typeof processSingleChunk>> = batchResults[batchResults.length - 1]
+        cursor = lastResult.nextCursor || null
+
+        if (cursor === null) {
+          // All done
           const endTime = new Date()
           const durationMs = endTime.getTime() - startTime.getTime()
           const durationStr = `${Math.floor(durationMs / 1000)}s`
 
-          addToHistory(
-            retailerSlug,
-            chunkResult?.success || false,
-            totalPlansProcessed,
-            durationStr
-          )
+          addToHistory(retailerSlug, true, totalPlansProcessed, durationStr)
 
           setMessages(prev => [...prev, {
             message: `[${retailerSlug}] ✅ Complete! ${totalPlansProcessed} plans in ${durationStr}`,
@@ -208,23 +267,24 @@ export default function SyncStatusPage() {
 
           return { success: true, totalPlans: totalPlansProcessed }
         }
-      } catch (error) {
-        console.error(`Sync error for ${retailerSlug}:`, error)
-        setMessages(prev => [...prev, {
-          message: `[${retailerSlug}] ❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          timestamp: new Date()
-        }])
-
-        const endTime = new Date()
-        const durationMs = endTime.getTime() - startTime.getTime()
-        const durationStr = `${Math.floor(durationMs / 1000)}s`
-        addToHistory(retailerSlug, false, 0, durationStr)
-
-        return { success: false, totalPlans: 0 }
       }
-    }
 
-    return { success: false, totalPlans: 0 }
+      return { success: true, totalPlans: totalPlansProcessed }
+
+    } catch (error) {
+      console.error(`Sync error for ${retailerSlug}:`, error)
+      setMessages(prev => [...prev, {
+        message: `[${retailerSlug}] ❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        timestamp: new Date()
+      }])
+
+      const endTime = new Date()
+      const durationMs = endTime.getTime() - startTime.getTime()
+      const durationStr = `${Math.floor(durationMs / 1000)}s`
+      addToHistory(retailerSlug, false, 0, durationStr)
+
+      return { success: false, totalPlans: 0 }
+    }
   }
 
   // Main sync function with parallel processing
@@ -239,6 +299,9 @@ export default function SyncStatusPage() {
     const retailersToSync = selectedRetailers.length > 0
       ? selectedRetailers
       : ALL_RETAILERS.map(r => r.slug)
+
+    // Initialize overall progress
+    setOverallProgress({ processed: 0, total: retailersToSync.length * 100 }) // Estimate
 
     setMessages(prev => [...prev, {
       message: `🚀 Starting parallel sync for ${retailersToSync.length} retailers (${retailersToSync.length > 5 ? '5' : retailersToSync.length} at a time)...`,
@@ -305,26 +368,34 @@ export default function SyncStatusPage() {
   }
 
   const getProgressStats = () => {
-    if (!messages.length) return null
+    if (!isRunning) return null
 
-    const lastMessage = messages[messages.length - 1]?.message || ''
+    // Use overall progress instead of last message
+    const { processed, total } = overallProgress
 
-    // Try to extract progress from messages like "📋 Fetching details: 50/436..."
-    const match = lastMessage.match(/(\d+)\/(\d+)/)
-    if (match) {
-      const current = parseInt(match[1])
-      const total = parseInt(match[2])
-      const percentage = (current / total) * 100
+    if (total === 0) return null
 
-      return {
-        current,
-        total,
-        percentage: percentage.toFixed(1),
-        estimatedTimeRemaining: total > current ? `~${Math.ceil((total - current) * 0.35)}s` : 'Completing...'
-      }
+    const percentage = (processed / total) * 100
+
+    // Calculate elapsed time and estimate remaining
+    const elapsed = syncStartTime ? (new Date().getTime() - syncStartTime.getTime()) / 1000 : 0
+    const rate = processed > 0 ? elapsed / processed : 0.35
+    const remaining = total > processed ? (total - processed) * rate : 0
+
+    // Format time as MM:SS
+    const formatTime = (seconds: number) => {
+      const mins = Math.floor(seconds / 60)
+      const secs = Math.floor(seconds % 60)
+      return `${mins}:${secs.toString().padStart(2, '0')}`
     }
 
-    return null
+    return {
+      current: processed,
+      total,
+      percentage: percentage.toFixed(1),
+      estimatedTimeRemaining: remaining > 0 ? formatTime(remaining) : 'Completing...',
+      elapsedTime: formatTime(elapsed)
+    }
   }
 
   const handleLogin = (e: React.FormEvent) => {
@@ -513,11 +584,11 @@ export default function SyncStatusPage() {
           )}
         </div>
 
-        {/* Progress Bar */}
+        {/* Progress Bar - Always visible when running */}
         {stats && (
           <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
             <div className="flex justify-between mb-2">
-              <span className="text-sm font-medium">Progress</span>
+              <span className="text-sm font-medium">Overall Progress</span>
               <span className="text-sm font-medium">{stats.percentage}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-4 mb-2">
@@ -526,9 +597,16 @@ export default function SyncStatusPage() {
                 style={{ width: `${stats.percentage}%` }}
               />
             </div>
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>{stats.current} / {stats.total} plans</span>
-              <span>{stats.estimatedTimeRemaining}</span>
+            <div className="grid grid-cols-3 gap-4 text-sm text-gray-600">
+              <div>
+                <span className="font-medium">Plans:</span> {stats.current.toLocaleString()} / {stats.total.toLocaleString()}
+              </div>
+              <div className="text-center">
+                <span className="font-medium">Elapsed:</span> {stats.elapsedTime}
+              </div>
+              <div className="text-right">
+                <span className="font-medium">ETA:</span> {stats.estimatedTimeRemaining}
+              </div>
             </div>
           </div>
         )}
