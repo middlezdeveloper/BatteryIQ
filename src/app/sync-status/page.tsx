@@ -29,6 +29,7 @@ interface SyncHistoryEntry {
   success: boolean
   plansProcessed: number
   duration: string
+  canceled?: boolean
 }
 
 interface RetailerProgress {
@@ -54,6 +55,7 @@ export default function SyncStatusPage() {
   const [syncStartTime, setSyncStartTime] = useState<Date | null>(null)
   const [retailerProgress, setRetailerProgress] = useState<RetailerProgress[]>([])
   const [overallProgress, setOverallProgress] = useState({ processed: 0, total: 0 })
+  const cancelSyncRef = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -77,14 +79,15 @@ export default function SyncStatusPage() {
   }, [])
 
   // Save sync result to history
-  const addToHistory = useCallback((retailer: string, success: boolean, plansProcessed: number, duration: string) => {
+  const addToHistory = useCallback((retailer: string, success: boolean, plansProcessed: number, duration: string, canceled = false) => {
     setSyncHistory(prev => {
       const entry: SyncHistoryEntry = {
         timestamp: new Date().toISOString(),
         retailer,
         success,
         plansProcessed,
-        duration
+        duration,
+        canceled
       }
       const newHistory = [entry, ...prev].slice(0, 10) // Keep last 10
       localStorage.setItem('syncHistory', JSON.stringify(newHistory))
@@ -140,6 +143,18 @@ export default function SyncStatusPage() {
       let newPlansInChunk = 0
 
       while (true) {
+        // Check for cancel
+        if (cancelSyncRef.current) {
+          await reader.cancel()
+          return {
+            nextCursor: null,
+            plansProcessed: 0,
+            newPlansInChunk: 0,
+            success: false,
+            canceled: true
+          }
+        }
+
         const { done, value } = await reader.read()
         if (done) break
 
@@ -177,7 +192,8 @@ export default function SyncStatusPage() {
         nextCursor: chunkResult?.nextCursor,
         plansProcessed: chunkResult?.totalPlans || 0,
         newPlansInChunk,
-        success: chunkResult?.success || false
+        success: chunkResult?.success || false,
+        canceled: false
       }
     } catch (error) {
       console.error(`Error processing chunk ${cursor} for ${retailerSlug}:`, error)
@@ -185,7 +201,8 @@ export default function SyncStatusPage() {
         nextCursor: null,
         plansProcessed: 0,
         newPlansInChunk: 0,
-        success: false
+        success: false,
+        canceled: false
       }
     }
   }
@@ -200,6 +217,16 @@ export default function SyncStatusPage() {
     // First, get the initial chunk to know total plans
     try {
       const firstChunk = await processSingleChunk(retailerSlug, 0, chunkSize, forceSync)
+
+      // Check if canceled
+      if (firstChunk.canceled) {
+        const endTime = new Date()
+        const durationMs = endTime.getTime() - startTime.getTime()
+        const durationStr = `${Math.floor(durationMs / 1000)}s`
+        addToHistory(retailerSlug, false, totalPlansProcessed, durationStr, true)
+        return { success: false, totalPlans: totalPlansProcessed, canceled: true }
+      }
+
       totalPlansProcessed += firstChunk.plansProcessed
 
       setOverallProgress(prev => ({
@@ -238,6 +265,16 @@ export default function SyncStatusPage() {
             processSingleChunk(retailerSlug, chunkCursor, chunkSize, forceSync)
           )
         )
+
+        // Check if any result was canceled
+        const wasCanceled = batchResults.some(r => r.canceled)
+        if (wasCanceled) {
+          const endTime = new Date()
+          const durationMs = endTime.getTime() - startTime.getTime()
+          const durationStr = `${Math.floor(durationMs / 1000)}s`
+          addToHistory(retailerSlug, false, totalPlansProcessed, durationStr, true)
+          return { success: false, totalPlans: totalPlansProcessed, canceled: true }
+        }
 
         // Accumulate results
         for (const result of batchResults) {
@@ -292,6 +329,7 @@ export default function SyncStatusPage() {
     setMessages([])
     setResult(null)
     setIsRunning(true)
+    cancelSyncRef.current = false // Reset cancel flag
     const startTime = new Date()
     setSyncStartTime(startTime)
 
@@ -319,6 +357,15 @@ export default function SyncStatusPage() {
       let totalPlansAllRetailers = 0
 
       for (let i = 0; i < batches.length; i++) {
+        // Check if sync was canceled
+        if (cancelSyncRef.current) {
+          setMessages(prev => [...prev, {
+            message: `🛑 Sync canceled by user`,
+            timestamp: new Date()
+          }])
+          break
+        }
+
         const batch = batches[i]
         setMessages(prev => [...prev, {
           message: `📦 Processing batch ${i + 1}/${batches.length}: ${batch.join(', ')}`,
@@ -365,6 +412,16 @@ export default function SyncStatusPage() {
       }])
       setIsRunning(false)
     }
+  }
+
+  const cancelSync = () => {
+    if (!isRunning) return
+
+    cancelSyncRef.current = true
+    setMessages(prev => [...prev, {
+      message: `⚠️  Canceling sync... This may take a moment to complete current operations gracefully.`,
+      timestamp: new Date()
+    }])
   }
 
   const getProgressStats = () => {
@@ -560,17 +617,28 @@ export default function SyncStatusPage() {
             </div>
           </div>
 
-          <button
-            onClick={startSync}
-            disabled={isRunning}
-            className={`w-full py-3 rounded-lg font-semibold text-white transition-all ${
-              isRunning
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-battery-green to-money-green hover:from-battery-green/90 hover:to-money-green/90'
-            }`}
-          >
-            {isRunning ? '⏳ Sync Running...' : '▶️ Start Sync'}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={startSync}
+              disabled={isRunning}
+              className={`flex-1 py-3 rounded-lg font-semibold text-white transition-all ${
+                isRunning
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-battery-green to-money-green hover:from-battery-green/90 hover:to-money-green/90'
+              }`}
+            >
+              {isRunning ? '⏳ Sync Running...' : '▶️ Start Sync'}
+            </button>
+
+            {isRunning && (
+              <button
+                onClick={cancelSync}
+                className="px-6 py-3 rounded-lg font-semibold text-white bg-red-500 hover:bg-red-600 transition-all"
+              >
+                🛑 Cancel
+              </button>
+            )}
+          </div>
 
           {/* Parallel Sync Info */}
           {isRunning && (selectedRetailers.length > 1 || selectedRetailers.length === 0) && (
@@ -698,7 +766,9 @@ export default function SyncStatusPage() {
                         {entry.retailer}
                       </td>
                       <td className="py-2 px-3">
-                        {entry.success ? (
+                        {entry.canceled ? (
+                          <span className="text-orange-600 font-medium">🛑 Canceled</span>
+                        ) : entry.success ? (
                           <span className="text-green-600 font-medium">✅ Success</span>
                         ) : (
                           <span className="text-red-600 font-medium">❌ Failed</span>
