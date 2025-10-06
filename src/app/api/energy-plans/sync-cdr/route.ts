@@ -2,8 +2,6 @@ import { NextRequest } from 'next/server'
 import { PrismaClient, TariffType, PlanType } from '@/generated/prisma'
 import { TOP_RETAILERS, CDR_CONFIG, getRetailerEndpoint, type CDRRetailer } from '@/lib/cdr-retailers'
 
-const prisma = new PrismaClient()
-
 // POST /api/energy-plans/sync-cdr - Fetch real plans from CDR retailers with SSE progress
 export async function POST(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -14,6 +12,7 @@ export async function POST(request: NextRequest) {
   const chunkSize = searchParams.get('chunkSize') ? parseInt(searchParams.get('chunkSize')!) : 50
 
   const encoder = new TextEncoder()
+  const prisma = new PrismaClient()
 
   const stream = new ReadableStream({
     async start(controller) {
