@@ -239,7 +239,7 @@ export default function SyncStatusPage() {
     let cursor: number | null = 0
     let totalPlansProcessed = 0
     let activeChunks = []
-    const maxParallelChunks = 3 // Process 3 chunks at a time per retailer (limited to avoid DB connection issues)
+    const maxParallelChunks = 1 // Process 1 chunk at a time to avoid DB connection issues
 
     // First, get the initial chunk to know total plans
     try {

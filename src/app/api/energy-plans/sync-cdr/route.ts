@@ -238,8 +238,8 @@ export async function POST(request: NextRequest) {
               }
             }
 
-            // Process plans in parallel batches of 5 (reduced to avoid DB connection pool exhaustion)
-            const PARALLEL_BATCH_SIZE = 5
+            // Process plans in parallel batches of 3 (reduced to avoid DB connection pool exhaustion)
+            const PARALLEL_BATCH_SIZE = 3
             let processedInChunk = 0
 
             for (let batchStart = 0; batchStart < plansChunk.length; batchStart += PARALLEL_BATCH_SIZE) {
