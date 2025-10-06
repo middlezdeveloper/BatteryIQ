@@ -258,11 +258,17 @@ export default function SyncStatusPage() {
           timestamp: new Date()
         }])
 
-        // Process this batch of chunks in parallel
+        // Process this batch of chunks in parallel with staggered start to avoid DB connection spikes
         const batchResults: Awaited<ReturnType<typeof processSingleChunk>>[] = await Promise.all(
-          chunkBatch.map(({ cursor: chunkCursor }) =>
-            processSingleChunk(retailerSlug, chunkCursor, chunkSize, forceSync)
-          )
+          chunkBatch.map(({ cursor: chunkCursor }, index) => {
+            // Stagger chunk starts by 500ms each to spread out DB queries
+            return new Promise<Awaited<ReturnType<typeof processSingleChunk>>>(resolve => {
+              setTimeout(async () => {
+                const result = await processSingleChunk(retailerSlug, chunkCursor, chunkSize, forceSync)
+                resolve(result)
+              }, index * 500)
+            })
+          })
         )
 
         // Check if any result was canceled
