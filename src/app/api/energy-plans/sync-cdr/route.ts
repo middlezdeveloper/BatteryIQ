@@ -468,7 +468,7 @@ export async function POST(request: NextRequest) {
                   await prisma.energyPlan.upsert({
                     where: { id: planId },
                     update: {
-                      retailerName: planDetail.brandName || retailer.name,
+                      retailerName: retailer.name, // Use consistent name from retailers list
                       planName: planDetail.displayName || planId,
                       state,
                       fuelType: planMeta.fuelType,
@@ -517,8 +517,8 @@ export async function POST(request: NextRequest) {
                     },
                     create: {
                       id: planId,
-                      retailerId: planDetail.brand || retailer.slug,
-                      retailerName: planDetail.brandName || retailer.name,
+                      retailerId: retailer.slug, // Use consistent slug from retailers list
+                      retailerName: retailer.name, // Use consistent name from retailers list
                       planName: planDetail.displayName || planId,
                       state,
                       fuelType: planMeta.fuelType,
