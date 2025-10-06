@@ -9,6 +9,7 @@ export async function POST(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const retailerSlug = searchParams.get('retailer')
   const priorityOnly = searchParams.get('priorityOnly') === 'true'
+  const forceSync = searchParams.get('forceSync') === 'true'
   const cursor = searchParams.get('cursor') ? parseInt(searchParams.get('cursor')!) : 0
   const chunkSize = searchParams.get('chunkSize') ? parseInt(searchParams.get('chunkSize')!) : 50
 
@@ -24,6 +25,9 @@ export async function POST(request: NextRequest) {
 
       try {
         sendProgress('🔄 Starting CDR plan sync...')
+        if (forceSync) {
+          sendProgress('⚠️  FORCE SYNC enabled - will re-fetch all plans regardless of lastUpdated')
+        }
 
         // Determine which retailers to sync
         let retailersToSync: CDRRetailer[] = TOP_RETAILERS
@@ -146,6 +150,10 @@ export async function POST(request: NextRequest) {
                 // New plan - needs fetching
                 plansToFetch.push(planId)
                 newCount++
+              } else if (forceSync) {
+                // Force sync - re-fetch everything regardless of lastUpdated
+                plansToFetch.push(planId)
+                updatedCount++
               } else {
                 // Existing plan - check if updated
                 const apiUpdated = new Date(meta.lastUpdated)

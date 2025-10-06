@@ -120,6 +120,7 @@ export const ALL_RETAILERS: CDRRetailer[] = [
   { name: 'Flow Power', slug: 'flow-power', baseUri: 'https://cdr.energymadeeasy.gov.au/flow-power/', priority: 3 },
   { name: 'Flow Systems', slug: 'flow-systems', baseUri: 'https://cdr.energymadeeasy.gov.au/flow-systems/', priority: 3 },
   { name: 'Future X Power', slug: 'future-x', baseUri: 'https://cdr.energymadeeasy.gov.au/future-x/', priority: 3 },
+  { name: 'Future X Power (Sunswitch)', slug: 'sunswitch', baseUri: 'https://cdr.energymadeeasy.gov.au/future-x/', priority: 3 },
   { name: 'GEE Energy', slug: 'gee-energy', baseUri: 'https://cdr.energymadeeasy.gov.au/gee-energy/', priority: 3 },
   { name: 'Glow Power', slug: 'glow-power', baseUri: 'https://cdr.energymadeeasy.gov.au/glow-power/', priority: 3 },
   { name: 'Humenergy Group', slug: 'humenergy', baseUri: 'https://cdr.energymadeeasy.gov.au/humenergy/', priority: 3 },
