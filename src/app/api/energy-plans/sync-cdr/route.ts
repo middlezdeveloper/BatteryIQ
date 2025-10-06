@@ -609,7 +609,8 @@ export async function POST(request: NextRequest) {
             results.push({
               retailer: retailer.name,
               plans: 0,
-              error: errorMessage
+              error: errorMessage,
+              isLastChunk: true  // Stop on errors
             })
           }
 
