@@ -212,38 +212,58 @@ export async function POST(request: NextRequest) {
 
             sendProgress(`   📥 Fetching details for plans ${startIndex + 1}-${endIndex} of ${totalPlansToFetch} (chunk ${Math.floor(cursor / chunkSize) + 1})...`)
 
-            // Process plans chunk
-            for (let i = 0; i < plansChunk.length; i++) {
-                const planId = plansChunk[i]
+            // Helper function to fetch and process a single plan
+            async function fetchAndProcessPlan(planId: string, planIndex: number) {
+              try {
+                // Fetch plan details using Plan Detail endpoint
+                const detailEndpoint = `${retailer.baseUri}cds-au/v1/energy/plans/${planId}`
+
+                const detailResponse = await fetch(detailEndpoint, {
+                  headers: {
+                    ...CDR_CONFIG.headers,
+                    'x-v': '3', // Plan Detail endpoint requires v3
+                  },
+                })
+
+                if (!detailResponse.ok) {
+                  sendProgress(`   ⚠️ Failed to fetch details for ${planId}: ${detailResponse.status}`)
+                  return null
+                }
+
+                const detailData = await detailResponse.json()
+                return { planId, planIndex, detailData }
+              } catch (error) {
+                sendProgress(`   ⚠️ Error fetching ${planId}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                return null
+              }
+            }
+
+            // Process plans in parallel batches of 20
+            const PARALLEL_BATCH_SIZE = 20
+            let processedInChunk = 0
+
+            for (let batchStart = 0; batchStart < plansChunk.length; batchStart += PARALLEL_BATCH_SIZE) {
+              const batchEnd = Math.min(batchStart + PARALLEL_BATCH_SIZE, plansChunk.length)
+              const batch = plansChunk.slice(batchStart, batchEnd)
+
+              // Fetch all plans in this batch in parallel
+              const batchResults = await Promise.all(
+                batch.map((planId, batchIndex) => fetchAndProcessPlan(planId, batchStart + batchIndex))
+              )
+
+              // Progress update
+              processedInChunk += batch.length
+              const globalProgress = startIndex + processedInChunk
+              sendProgress(`   📋 Fetching details: ${globalProgress}/${totalPlansToFetch}...`)
+
+              // Process each result
+              for (const result of batchResults) {
+                if (!result) continue
+
+                const { planId, detailData } = result
+                const planDetail = detailData.data || {}
 
                 try {
-                  // Fetch plan details using Plan Detail endpoint
-                  const detailEndpoint = `${retailer.baseUri}cds-au/v1/energy/plans/${planId}`
-
-                  // Rate limiting: 100ms delay between detail calls
-                  if (i > 0) {
-                    await new Promise(resolve => setTimeout(resolve, 100))
-                  }
-
-                  if ((i + 1) % 10 === 0 || i === 0) {
-                    const globalIndex = startIndex + i + 1
-                    sendProgress(`   📋 Fetching details: ${globalIndex}/${totalPlansToFetch}...`)
-                  }
-
-                  const detailResponse = await fetch(detailEndpoint, {
-                    headers: {
-                      ...CDR_CONFIG.headers,
-                      'x-v': '3', // Plan Detail endpoint requires v3
-                    },
-                  })
-
-                  if (!detailResponse.ok) {
-                    sendProgress(`   ⚠️ Failed to fetch details for ${planId}: ${detailResponse.status}`)
-                    continue
-                  }
-
-                  const detailData = await detailResponse.json()
-                  const planDetail = detailData.data || {}
 
                   // Get basic plan info from our metadata map
                   const planMeta = apiPlanMeta.get(planId)
@@ -554,6 +574,12 @@ export async function POST(request: NextRequest) {
                   sendProgress(`   ⚠️ Error storing plan ${planId}: ${planError instanceof Error ? planError.message : 'Unknown error'}`)
                 }
               }
+
+              // Small delay between batches to avoid overwhelming the API
+              if (batchEnd < plansChunk.length) {
+                await new Promise(resolve => setTimeout(resolve, 100))
+              }
+            }
 
             if (isLastChunk) {
               sendProgress(`   ✅ ${retailer.name} sync complete:`)

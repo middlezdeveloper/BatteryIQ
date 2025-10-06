@@ -207,6 +207,14 @@ export default function SyncStatusPage() {
     }
   }
 
+  // Helper to format duration as MM:SS
+  const formatDuration = (durationMs: number) => {
+    const totalSeconds = Math.floor(durationMs / 1000)
+    const mins = Math.floor(totalSeconds / 60)
+    const secs = totalSeconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
   // Sync a single retailer with parallel chunk processing
   const syncSingleRetailer = async (retailerSlug: string, startTime: Date) => {
     let cursor: number | null = 0
@@ -222,7 +230,7 @@ export default function SyncStatusPage() {
       if (firstChunk.canceled) {
         const endTime = new Date()
         const durationMs = endTime.getTime() - startTime.getTime()
-        const durationStr = `${Math.floor(durationMs / 1000)}s`
+        const durationStr = formatDuration(durationMs)
         addToHistory(retailerSlug, false, totalPlansProcessed, durationStr, true)
         return { success: false, totalPlans: totalPlansProcessed, canceled: true }
       }
@@ -238,7 +246,7 @@ export default function SyncStatusPage() {
         // Only one chunk needed
         const endTime = new Date()
         const durationMs = endTime.getTime() - startTime.getTime()
-        const durationStr = `${Math.floor(durationMs / 1000)}s`
+        const durationStr = formatDuration(durationMs)
         addToHistory(retailerSlug, firstChunk.success, totalPlansProcessed, durationStr)
         return { success: true, totalPlans: totalPlansProcessed }
       }
@@ -271,7 +279,7 @@ export default function SyncStatusPage() {
         if (wasCanceled) {
           const endTime = new Date()
           const durationMs = endTime.getTime() - startTime.getTime()
-          const durationStr = `${Math.floor(durationMs / 1000)}s`
+          const durationStr = formatDuration(durationMs)
           addToHistory(retailerSlug, false, totalPlansProcessed, durationStr, true)
           return { success: false, totalPlans: totalPlansProcessed, canceled: true }
         }
@@ -293,7 +301,7 @@ export default function SyncStatusPage() {
           // All done
           const endTime = new Date()
           const durationMs = endTime.getTime() - startTime.getTime()
-          const durationStr = `${Math.floor(durationMs / 1000)}s`
+          const durationStr = formatDuration(durationMs)
 
           addToHistory(retailerSlug, true, totalPlansProcessed, durationStr)
 
@@ -317,7 +325,7 @@ export default function SyncStatusPage() {
 
       const endTime = new Date()
       const durationMs = endTime.getTime() - startTime.getTime()
-      const durationStr = `${Math.floor(durationMs / 1000)}s`
+      const durationStr = formatDuration(durationMs)
       addToHistory(retailerSlug, false, 0, durationStr)
 
       return { success: false, totalPlans: 0 }
@@ -388,7 +396,7 @@ export default function SyncStatusPage() {
 
       const endTime = new Date()
       const durationMs = endTime.getTime() - startTime.getTime()
-      const durationStr = `${Math.floor(durationMs / 1000)}s`
+      const durationStr = formatDuration(durationMs)
 
       setResult({
         done: true,
