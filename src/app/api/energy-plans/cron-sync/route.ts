@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@/generated/prisma'
-import { ALL_RETAILERS } from '@/lib/cdr-retailers'
+import { TOP_RETAILERS } from '@/lib/cdr-retailers'
 
-const prisma = new PrismaClient()
-
-// GET /api/energy-plans/cron-sync - Automated CDR sync (called by Vercel cron or manual trigger)
-// Requires secret token for security
+// GET /api/energy-plans/cron-sync - Automated CDR sync (called by Vercel cron)
+// Syncs TOP_RETAILERS (Big 3 + major tier 2) - the most important retailers
+// Uses the new parallel chunk infrastructure for fast syncing
 export async function GET(request: NextRequest) {
+  const prisma = new PrismaClient()
+
   try {
     // Security: Verify cron secret
     const authHeader = request.headers.get('authorization')
@@ -19,131 +20,90 @@ export async function GET(request: NextRequest) {
       }, { status: 401 })
     }
 
-    console.log('🤖 Starting automated CDR sync...')
+    console.log('🤖 Starting automated CDR sync for TOP_RETAILERS...')
+    console.log(`📊 Syncing ${TOP_RETAILERS.length} priority retailers`)
 
     const startTime = Date.now()
-    const results: { retailer: string; new: number; updated: number; errors: number }[] = []
 
-    // Sync all retailers (Big 3 + major retailers + all others)
-    // This includes all 111 active retailers from AER March 2025 list
-    const retailersToSync = ALL_RETAILERS
+    // Sync all TOP_RETAILERS by calling the sync API without a specific retailer
+    // This triggers the default behavior which syncs TOP_RETAILERS
+    const syncUrl = `${request.nextUrl.origin}/api/energy-plans/sync-cdr`
 
-    for (const retailer of retailersToSync) {
-      console.log(`\n📡 Syncing ${retailer.name}...`)
+    console.log(`🔗 Calling sync API: ${syncUrl}`)
 
-      try {
-        let cursor = 0
-        let totalNew = 0
-        let totalUpdated = 0
-        let hasMore = true
+    const response = await fetch(syncUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/event-stream'
+      }
+    })
 
-        // Process in chunks of 50 until complete
-        while (hasMore) {
-          const params = new URLSearchParams({
-            retailer: retailer.slug,
-            cursor: cursor.toString(),
-            chunkSize: '50'
-          })
+    if (!response.ok) {
+      throw new Error(`Sync API returned ${response.status}`)
+    }
 
-          // Call our sync API internally
-          const syncUrl = `${request.nextUrl.origin}/api/energy-plans/sync-cdr?${params}`
-          const response = await fetch(syncUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          })
+    // Read and log the SSE stream
+    const reader = response.body?.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let lastResult: any = null
+    let messageCount = 0
 
-          // Read SSE stream
-          const reader = response.body?.getReader()
-          const decoder = new TextDecoder()
-          let buffer = ''
-          let lastData: any = null
+    if (reader) {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
 
-          if (reader) {
-            while (true) {
-              const { done, value } = await reader.read()
-              if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
 
-              buffer += decoder.decode(value, { stream: true })
-              const lines = buffer.split('\n')
-              buffer = lines.pop() || ''
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6))
 
-              for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  try {
-                    lastData = JSON.parse(line.slice(6))
-                  } catch (e) {
-                    // Ignore parse errors
-                  }
-                }
+              // Log progress messages
+              if (data.message) {
+                console.log(data.message)
+                messageCount++
               }
+
+              // Capture final result
+              if (data.done) {
+                lastResult = data
+              }
+            } catch (e) {
+              // Ignore parse errors for non-JSON lines
             }
           }
-
-          // Check if we need to continue
-          if (lastData && !lastData.done && lastData.nextCursor !== null) {
-            cursor = lastData.nextCursor
-            hasMore = true
-
-            // Extract stats from this chunk
-            if (lastData.retailers?.[0]) {
-              totalNew += lastData.retailers[0].plans || 0
-            }
-          } else {
-            hasMore = false
-
-            // Final chunk stats
-            if (lastData && lastData.retailers?.[0]) {
-              totalUpdated += lastData.retailers[0].plans || 0
-            }
-          }
-
-          // Small delay between chunks to be nice to the API
-          await new Promise(resolve => setTimeout(resolve, 500))
         }
-
-        results.push({
-          retailer: retailer.name,
-          new: totalNew,
-          updated: totalUpdated,
-          errors: 0
-        })
-
-        console.log(`✅ ${retailer.name}: ${totalNew + totalUpdated} plans synced`)
-
-      } catch (error) {
-        console.error(`❌ Error syncing ${retailer.name}:`, error)
-        results.push({
-          retailer: retailer.name,
-          new: 0,
-          updated: 0,
-          errors: 1
-        })
       }
     }
 
     const duration = Math.round((Date.now() - startTime) / 1000)
-    const totalPlans = results.reduce((sum, r) => sum + r.new + r.updated, 0)
+    const totalPlans = lastResult?.totalPlans || 0
 
-    console.log(`\n✅ Cron sync complete! ${totalPlans} plans synced in ${duration}s`)
-
-    // TODO: Send email notification with results summary
-    // This would require email service integration (SendGrid, Resend, etc.)
+    console.log(`\n✅ Cron sync complete!`)
+    console.log(`   Duration: ${duration}s (${Math.round(duration / 60)}m)`)
+    console.log(`   Total plans processed: ${totalPlans}`)
+    console.log(`   Messages logged: ${messageCount}`)
 
     return NextResponse.json({
       success: true,
       duration,
       totalPlans,
-      results,
-      timestamp: new Date().toISOString()
+      retailers: lastResult?.retailers || [],
+      timestamp: new Date().toISOString(),
+      messagesLogged: messageCount
     })
 
   } catch (error) {
     console.error('❌ Cron sync error:', error)
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
     }, { status: 500 })
   } finally {
     await prisma.$disconnect()
