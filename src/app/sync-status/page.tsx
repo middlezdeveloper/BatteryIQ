@@ -241,37 +241,9 @@ export default function SyncStatusPage() {
     let activeChunks = []
     const maxParallelChunks = 5 // Process 5 chunks at a time (balanced speed vs DB connections)
 
-    // First, get the initial chunk to know total plans
+    // Process all chunks in parallel batches from the start
     try {
-      const firstChunk = await processSingleChunk(retailerSlug, 0, chunkSize, forceSync)
-
-      // Check if canceled
-      if (firstChunk.canceled) {
-        const endTime = new Date()
-        const durationMs = endTime.getTime() - startTime.getTime()
-        const durationStr = formatDuration(durationMs)
-        addToHistory(retailerSlug, false, totalPlansProcessed, durationStr, true)
-        return { success: false, totalPlans: totalPlansProcessed, canceled: true }
-      }
-
-      totalPlansProcessed += firstChunk.plansProcessed
-
-      setOverallProgress(prev => ({
-        ...prev,
-        processed: prev.processed + firstChunk.plansProcessed
-      }))
-
-      if (!firstChunk.nextCursor) {
-        // Only one chunk needed
-        const endTime = new Date()
-        const durationMs = endTime.getTime() - startTime.getTime()
-        const durationStr = formatDuration(durationMs)
-        addToHistory(retailerSlug, firstChunk.success, totalPlansProcessed, durationStr)
-        return { success: true, totalPlans: totalPlansProcessed }
-      }
-
-      // Process remaining chunks in parallel batches
-      cursor = firstChunk.nextCursor
+      cursor = 0
 
       while (cursor !== null) {
         // Create batch of parallel chunk requests
