@@ -352,8 +352,8 @@ export default function SyncStatusPage() {
     }])
 
     try {
-      // Process retailers in batches of 5 for parallel execution
-      const batchSize = 5
+      // Process retailers one at a time to avoid overwhelming DB connection pool
+      const batchSize = 1
       const batches = []
       for (let i = 0; i < retailersToSync.length; i += batchSize) {
         batches.push(retailersToSync.slice(i, i + batchSize))
