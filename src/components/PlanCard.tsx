@@ -278,6 +278,9 @@ export default function PlanCard({ plan }: PlanCardProps) {
         {/* Expanded Details */}
         {showDetails && (
           <div className="mt-4 pt-4 border-t space-y-2 text-sm">
+            <div className="text-xs text-gray-500 italic mb-3">
+              All prices inc. GST
+            </div>
             <div className="flex justify-between">
               <span className="text-serious-gray">Tariff Type</span>
               <span className="text-midnight-blue font-medium">{plan.tariffType}</span>

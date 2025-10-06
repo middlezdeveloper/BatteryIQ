@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { ALL_RETAILERS } from '@/lib/cdr-retailers'
 
 interface SyncMessage {
   message: string
@@ -22,14 +23,80 @@ interface SyncResult {
   error?: string
 }
 
+interface SyncHistoryEntry {
+  timestamp: string
+  retailer: string
+  success: boolean
+  plansProcessed: number
+  duration: string
+}
+
 export default function SyncStatusPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [password, setPassword] = useState('')
   const [messages, setMessages] = useState<SyncMessage[]>([])
   const [result, setResult] = useState<SyncResult | null>(null)
   const [isRunning, setIsRunning] = useState(false)
-  const [retailer, setRetailer] = useState('')
+  const [selectedRetailers, setSelectedRetailers] = useState<string[]>([])
   const [chunkSize, setChunkSize] = useState('100')
   const [forceSync, setForceSync] = useState(false)
+  const [showChunkInfo, setShowChunkInfo] = useState(false)
+  const [showRetailerDropdown, setShowRetailerDropdown] = useState(false)
+  const [syncHistory, setSyncHistory] = useState<SyncHistoryEntry[]>([])
+  const [syncStartTime, setSyncStartTime] = useState<Date | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Load sync history from localStorage
+  useEffect(() => {
+    const history = localStorage.getItem('syncHistory')
+    if (history) {
+      setSyncHistory(JSON.parse(history))
+    }
+  }, [])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowRetailerDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Save sync result to history
+  const addToHistory = useCallback((retailer: string, success: boolean, plansProcessed: number, duration: string) => {
+    setSyncHistory(prev => {
+      const entry: SyncHistoryEntry = {
+        timestamp: new Date().toISOString(),
+        retailer,
+        success,
+        plansProcessed,
+        duration
+      }
+      const newHistory = [entry, ...prev].slice(0, 10) // Keep last 10
+      localStorage.setItem('syncHistory', JSON.stringify(newHistory))
+      return newHistory
+    })
+  }, [])
+
+  const toggleRetailer = (slug: string) => {
+    setSelectedRetailers(prev =>
+      prev.includes(slug)
+        ? prev.filter(s => s !== slug)
+        : [...prev, slug]
+    )
+  }
+
+  const clearRetailers = () => {
+    setSelectedRetailers([])
+  }
+
+  const selectAllRetailers = () => {
+    setSelectedRetailers(ALL_RETAILERS.map(r => r.slug))
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -43,9 +110,17 @@ export default function SyncStatusPage() {
     setMessages([])
     setResult(null)
     setIsRunning(true)
+    const startTime = new Date()
+    setSyncStartTime(startTime)
 
     const params = new URLSearchParams()
-    if (retailer) params.set('retailer', retailer)
+    // Use selected retailers if any, otherwise sync all
+    const retailerParam = selectedRetailers.length > 0
+      ? selectedRetailers.join(',')
+      : 'ALL'
+    if (selectedRetailers.length > 0) {
+      params.set('retailer', selectedRetailers[0]) // For now, process first selected
+    }
     params.set('chunkSize', chunkSize)
     if (forceSync) params.set('forceSync', 'true')
 
@@ -92,6 +167,16 @@ export default function SyncStatusPage() {
                 setResult(data)
                 if (data.done) {
                   setIsRunning(false)
+                  // Add to history
+                  const endTime = new Date()
+                  const durationMs = endTime.getTime() - startTime.getTime()
+                  const durationStr = `${Math.floor(durationMs / 1000)}s`
+                  addToHistory(
+                    retailerParam,
+                    data.success || false,
+                    data.totalPlans || 0,
+                    durationStr
+                  )
                 }
               }
             } catch (e) {
@@ -107,6 +192,11 @@ export default function SyncStatusPage() {
         timestamp: new Date()
       }])
       setIsRunning(false)
+      // Add failed sync to history
+      const endTime = new Date()
+      const durationMs = endTime.getTime() - startTime.getTime()
+      const durationStr = `${Math.floor(durationMs / 1000)}s`
+      addToHistory(retailerParam, false, 0, durationStr)
     }
   }
 
@@ -133,6 +223,49 @@ export default function SyncStatusPage() {
     return null
   }
 
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Simple password check - in production, use proper auth
+    if (password === 'batteryiq2025') {
+      setIsAuthenticated(true)
+      setPassword('')
+    } else {
+      alert('Incorrect password')
+    }
+  }
+
+  // Login screen (before main UI)
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-morning-sky to-whisper-gray flex items-center justify-center p-8">
+        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
+          <h1 className="text-2xl font-heading font-bold text-midnight-blue mb-6">
+            🔒 Sync Status - Authentication Required
+          </h1>
+          <form onSubmit={handleLogin}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg mb-4"
+              placeholder="Enter password"
+              autoFocus
+            />
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-battery-green to-money-green text-white py-2 rounded-lg font-semibold hover:from-battery-green/90 hover:to-money-green/90"
+            >
+              Login
+            </button>
+          </form>
+        </div>
+      </div>
+    )
+  }
+
   const stats = getProgressStats()
 
   return (
@@ -147,23 +280,84 @@ export default function SyncStatusPage() {
           <h2 className="text-xl font-semibold mb-4">Sync Controls</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
+            {/* Retailer Multi-Select */}
+            <div className="relative" ref={dropdownRef}>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Retailer (optional)
+                Retailers (optional)
               </label>
-              <input
-                type="text"
-                value={retailer}
-                onChange={(e) => setRetailer(e.target.value)}
-                placeholder="e.g., ovo-energy"
-                className="w-full px-3 py-2 border rounded-lg"
+              <button
+                type="button"
+                onClick={() => setShowRetailerDropdown(!showRetailerDropdown)}
                 disabled={isRunning}
-              />
+                className="w-full px-3 py-2 border rounded-lg text-left bg-white disabled:bg-gray-100 flex items-center justify-between"
+              >
+                <span className="text-sm text-gray-700 truncate">
+                  {selectedRetailers.length === 0
+                    ? 'All retailers (88)'
+                    : `${selectedRetailers.length} selected`}
+                </span>
+                <span className="text-gray-400">▼</span>
+              </button>
+
+              {showRetailerDropdown && (
+                <div className="absolute z-10 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-80 overflow-y-auto">
+                  {/* Quick actions */}
+                  <div className="sticky top-0 bg-gray-50 border-b px-3 py-2 flex gap-2">
+                    <button
+                      onClick={selectAllRetailers}
+                      className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      onClick={clearRetailers}
+                      className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                    >
+                      Clear
+                    </button>
+                  </div>
+
+                  {/* Retailer list */}
+                  {ALL_RETAILERS.map((retailer) => (
+                    <label
+                      key={retailer.slug}
+                      className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedRetailers.includes(retailer.slug)}
+                        onChange={() => toggleRetailer(retailer.slug)}
+                        className="mr-2"
+                      />
+                      <span className="text-sm text-gray-700">{retailer.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
 
+            {/* Chunk Size with Tooltip */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
                 Chunk Size
+                <button
+                  type="button"
+                  onMouseEnter={() => setShowChunkInfo(true)}
+                  onMouseLeave={() => setShowChunkInfo(false)}
+                  className="relative text-blue-500 hover:text-blue-600"
+                >
+                  ℹ️
+                  {showChunkInfo && (
+                    <div className="absolute left-0 top-6 w-72 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-lg z-20">
+                      Number of plans to process per request. Larger chunks are faster but may timeout on Vercel (10min limit).
+                      <br />
+                      <br />
+                      <strong>Recommended:</strong>
+                      <br />• 100-200 for individual retailers
+                      <br />• 50-100 for full syncs
+                    </div>
+                  )}
+                </button>
               </label>
               <input
                 type="number"
@@ -171,9 +365,12 @@ export default function SyncStatusPage() {
                 onChange={(e) => setChunkSize(e.target.value)}
                 className="w-full px-3 py-2 border rounded-lg"
                 disabled={isRunning}
+                min="10"
+                max="500"
               />
             </div>
 
+            {/* Force Sync */}
             <div className="flex items-end">
               <label className="flex items-center">
                 <input
@@ -280,6 +477,51 @@ export default function SyncStatusPage() {
                 <strong>Error:</strong> {result.error}
               </p>
             )}
+          </div>
+        )}
+
+        {/* Sync History */}
+        {syncHistory.length > 0 && (
+          <div className="bg-white rounded-xl shadow-lg p-6 mt-6">
+            <h2 className="text-xl font-semibold mb-4">📊 Recent Syncs</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2 px-3">Timestamp</th>
+                    <th className="text-left py-2 px-3">Retailer</th>
+                    <th className="text-left py-2 px-3">Status</th>
+                    <th className="text-right py-2 px-3">Plans</th>
+                    <th className="text-right py-2 px-3">Duration</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {syncHistory.map((entry, idx) => (
+                    <tr key={idx} className="border-b hover:bg-gray-50">
+                      <td className="py-2 px-3 text-gray-600">
+                        {new Date(entry.timestamp).toLocaleString()}
+                      </td>
+                      <td className="py-2 px-3 font-medium">
+                        {entry.retailer}
+                      </td>
+                      <td className="py-2 px-3">
+                        {entry.success ? (
+                          <span className="text-green-600 font-medium">✅ Success</span>
+                        ) : (
+                          <span className="text-red-600 font-medium">❌ Failed</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-3 text-right text-gray-700">
+                        {entry.plansProcessed.toLocaleString()}
+                      </td>
+                      <td className="py-2 px-3 text-right text-gray-600">
+                        {entry.duration}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
