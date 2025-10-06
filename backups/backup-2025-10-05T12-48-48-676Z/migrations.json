@@ -1,0 +1,12 @@
+[
+  {
+    "id": "1e2b1c3f-1b63-44aa-a7d8-86a2312757e6",
+    "checksum": "c71d0c8df9553b192632fb3edd115539700cd6e46283f3020450373fddb3b4dd",
+    "finished_at": null,
+    "migration_name": "20251003061145_add_energy_plans_models",
+    "logs": "A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve\n\nMigration name: 20251003061145_add_energy_plans_models\n\nDatabase error code: 42704\n\nDatabase error:\nERROR: type \"datetime\" does not exist\n\nPosition:\n\u001b[1m  1\u001b[0m -- CreateTable\n\u001b[1m  2\u001b[0m CREATE TABLE \"users\" (\n\u001b[1m  3\u001b[0m     \"id\" TEXT NOT NULL PRIMARY KEY,\n\u001b[1m  4\u001b[0m     \"email\" TEXT,\n\u001b[1m  5\u001b[0m     \"locationId\" TEXT,\n\u001b[1m  6\u001b[1;31m     \"createdAt\" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,\u001b[0m\n\nDbError { severity: \"ERROR\", parsed_severity: Some(Error), code: SqlState(E42704), message: \"type \\\"datetime\\\" does not exist\", detail: None, hint: None, position: Some(Original(132)), where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some(\"parse_type.c\"), line: Some(270), routine: Some(\"typenameType\") }\n\n   0: sql_schema_connector::apply_migration::apply_script\n           with migration_name=\"20251003061145_add_energy_plans_models\"\n             at schema-engine/connectors/sql-schema-connector/src/apply_migration.rs:113\n   1: schema_commands::commands::apply_migrations::Applying migration\n           with migration_name=\"20251003061145_add_energy_plans_models\"\n             at schema-engine/commands/src/commands/apply_migrations.rs:95\n   2: schema_core::state::ApplyMigrations\n             at schema-engine/core/src/state.rs:236",
+    "rolled_back_at": null,
+    "started_at": "2025-10-05T12:38:17.308Z",
+    "applied_steps_count": 0
+  }
+]

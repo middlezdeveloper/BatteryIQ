@@ -1,0 +1,321 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww23880\viewh20720\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 Plan: Add Electricity Filter + Real-Time Progress + Production Deploy                                                                        \uc0\u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  \u55356 \u57263  Objectives                                                                                                                                \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  1. Add real-time progress updates (SSE) for sync visibility                                                                                  \u9474 \
+     \uc0\u9474  2. Filter out GAS plans before fetching details (save ~50% API calls)                                                                        \u9474 \
+     \uc0\u9474  3. Test local production build                                                                                                               \u9474 \
+     \uc0\u9474  4. Deploy to production safely                                                                                                               \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  \u55357 \u56523  Implementation Steps                                                                                                                      \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  Step 1: Add Real-Time Progress with SSE (15 min)                                                                                             \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  Why: You can't see what's happening during 20-min syncs. SSE streams live updates to the UI.                                                 \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  File 1: src/app/api/energy-plans/sync-cdr/route.ts                                                                                           \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  Convert from regular POST to streaming response:                                                                                             \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  // Change response type to streaming                                                                                                         \u9474 \
+     \uc0\u9474  export async function POST(request: NextRequest) \{                                                                                           \u9474 \
+     \uc0\u9474    const encoder = new TextEncoder()                                                                                                          \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474    const stream = new ReadableStream(\{                                                                                                        \u9474 \
+     \uc0\u9474      async start(controller) \{                                                                                                                \u9474 \
+     \uc0\u9474        // Helper to send progress updates                                                                                                     \u9474 \
+     \uc0\u9474        const sendProgress = (message: string) => \{                                                                                            \u9474 \
+     \uc0\u9474          controller.enqueue(encoder.encode(`data: $\{JSON.stringify(\{ message \})\}\\n\\n`))                                                       \u9474 \
+     \uc0\u9474        \}                                                                                                                                      \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474        try \{                                                                                                                                  \u9474 \
+     \uc0\u9474          sendProgress('\u55357 \u56580  Starting CDR plan sync...')                                                                                         \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474          // ... existing code with sendProgress() calls added:                                                                                \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474          sendProgress(`\u55357 \u56545  Fetching plans from $\{retailer.name\}...`)                                                                           \u9474 \
+     \uc0\u9474          sendProgress(`\u9989  Page $\{page\}: $\{pagePlans.length\} plans`)                                                                            \u9474 \
+     \uc0\u9474          sendProgress(`\u55357 \u56523  Fetching details: $\{i + 1\}/$\{electricityPlans.length\}...`)                                                          \u9474 \
+     \uc0\u9474          sendProgress(`\u55357 \u56510  Stored $\{storedCount\} plans for $\{retailer.name\}`)                                                                  \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474          // Final result                                                                                                                      \u9474 \
+     \uc0\u9474          controller.enqueue(encoder.encode(`data: $\{JSON.stringify(\{                                                                          \u9474 \
+     \uc0\u9474            done: true,                                                                                                                        \u9474 \
+     \uc0\u9474            totalPlans,                                                                                                                        \u9474 \
+     \uc0\u9474            retailers: results                                                                                                                 \u9474 \
+     \uc0\u9474          \})\}\\n\\n`))                                                                                                                           \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474          controller.close()                                                                                                                   \u9474 \
+     \uc0\u9474        \} catch (error) \{                                                                                                                      \u9474 \
+     \uc0\u9474          sendProgress(`\u10060  Error: $\{error.message\}`)                                                                                            \u9474 \
+     \uc0\u9474          controller.close()                                                                                                                   \u9474 \
+     \uc0\u9474        \}                                                                                                                                      \u9474 \
+     \uc0\u9474      \}                                                                                                                                        \u9474 \
+     \uc0\u9474    \})                                                                                                                                         \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474    return new Response(stream, \{                                                                                                              \u9474 \
+     \uc0\u9474      headers: \{                                                                                                                               \u9474 \
+     \uc0\u9474        'Content-Type': 'text/event-stream',                                                                                                   \u9474 \
+     \uc0\u9474        'Cache-Control': 'no-cache',                                                                                                           \u9474 \
+     \uc0\u9474        'Connection': 'keep-alive',                                                                                                            \u9474 \
+     \uc0\u9474      \},                                                                                                                                       \u9474 \
+     \uc0\u9474    \})                                                                                                                                         \u9474 \
+     \uc0\u9474  \}                                                                                                                                            \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  File 2: src/app/admin/cdr-sync/page.tsx                                                                                                      \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  Update frontend to consume SSE:                                                                                                              \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  const handleSync = async (retailer?: string, priorityOnly?: boolean) => \{                                                                    \u9474 \
+     \uc0\u9474    setSyncing(true)                                                                                                                           \u9474 \
+     \uc0\u9474    setResults(null)                                                                                                                           \u9474 \
+     \uc0\u9474    setProgressMessages([]) // New state for live messages                                                                                     \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474    try \{                                                                                                                                      \u9474 \
+     \uc0\u9474      const params = new URLSearchParams()                                                                                                     \u9474 \
+     \uc0\u9474      if (retailer) params.append('retailer', retailer)                                                                                        \u9474 \
+     \uc0\u9474      if (priorityOnly) params.append('priorityOnly', 'true')                                                                                  \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474      const url = `/api/energy-plans/sync-cdr$\{params.toString() ? `?$\{params\}` : ''\}`                                                         \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474      const response = await fetch(url, \{ method: 'POST' \})                                                                                    \u9474 \
+     \uc0\u9474      const reader = response.body?.getReader()                                                                                                \u9474 \
+     \uc0\u9474      const decoder = new TextDecoder()                                                                                                        \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474      while (true) \{                                                                                                                           \u9474 \
+     \uc0\u9474        const \{ done, value \} = await reader!.read()                                                                                           \u9474 \
+     \uc0\u9474        if (done) break                                                                                                                        \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474        const chunk = decoder.decode(value)                                                                                                    \u9474 \
+     \uc0\u9474        const lines = chunk.split('\\n')                                                                                                        \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474        for (const line of lines) \{                                                                                                            \u9474 \
+     \uc0\u9474          if (line.startsWith('data: ')) \{                                                                                                     \u9474 \
+     \uc0\u9474            const data = JSON.parse(line.slice(6))                                                                                             \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474            if (data.done) \{                                                                                                                   \u9474 \
+     \uc0\u9474              setResults(data)                                                                                                                 \u9474 \
+     \uc0\u9474              break                                                                                                                            \u9474 \
+     \uc0\u9474            \} else if (data.message) \{                                                                                                         \u9474 \
+     \uc0\u9474              setProgressMessages(prev => [...prev, data.message])                                                                             \u9474 \
+     \uc0\u9474            \}                                                                                                                                  \u9474 \
+     \uc0\u9474          \}                                                                                                                                    \u9474 \
+     \uc0\u9474        \}                                                                                                                                      \u9474 \
+     \uc0\u9474      \}                                                                                                                                        \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474      await fetchDbStats()                                                                                                                     \u9474 \
+     \uc0\u9474    \} catch (error) \{                                                                                                                          \u9474 \
+     \uc0\u9474      setResults(\{ success: false, error: error.message \})                                                                                     \u9474 \
+     \uc0\u9474    \} finally \{                                                                                                                                \u9474 \
+     \uc0\u9474      setSyncing(false)                                                                                                                        \u9474 \
+     \uc0\u9474    \}                                                                                                                                          \u9474 \
+     \uc0\u9474  \}                                                                                                                                            \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  UI Changes: Add progress message display:                                                                                                    \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  \{syncing && (                                                                                                                                \u9474 \
+     \uc0\u9474    <div className="mt-6">                                                                                                                     \u9474 \
+     \uc0\u9474      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-battery-green mx-auto mb-4"></div>                                 \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474      \{/* Live progress messages */\}                                                                                                           \u9474 \
+     \uc0\u9474      <div className="bg-gray-900 text-green-400 font-mono text-sm p-4 rounded-lg max-h-96 overflow-y-auto">                                   \u9474 \
+     \uc0\u9474        \{progressMessages.map((msg, idx) => (                                                                                                  \u9474 \
+     \uc0\u9474          <div key=\{idx\}>\{msg\}</div>                                                                                                           \u9474 \
+     \uc0\u9474        ))\}                                                                                                                                    \u9474 \
+     \uc0\u9474      </div>                                                                                                                                   \u9474 \
+     \uc0\u9474    </div>                                                                                                                                     \u9474 \
+     \uc0\u9474  )\}                                                                                                                                           \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  User sees:                                                                                                                                   \u9474 \
+     \uc0\u9474  \u55357 \u56580  Starting CDR plan sync...                                                                                                                 \u9474 \
+     \uc0\u9474  \u55357 \u56545  Fetching plans from Origin Energy...                                                                                                      \u9474 \
+     \uc0\u9474  \u9989  Page 1: 234 plans (total so far: 234)                                                                                                      \u9474 \
+     \uc0\u9474  \u9989  Page 2: 189 plans (total so far: 423)                                                                                                      \u9474 \
+     \uc0\u9474  \u55357 \u56523  Fetching details: 1/423...                                                                                                                \u9474 \
+     \uc0\u9474  \u55357 \u56523  Fetching details: 50/423...                                                                                                               \u9474 \
+     \uc0\u9474  \u55357 \u56523  Fetching details: 100/423...                                                                                                              \u9474 \
+     \uc0\u9474  \u55357 \u56523  Fetching details: 150/423...                                                                                                              \u9474 \
+     \uc0\u9474  \u9989  Fetched 423 plan details, 0 failed                                                                                                         \u9474 \
+     \uc0\u9474  \u55357 \u56510  Stored 423/423 plans for Origin Energy                                                                                                    \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  Step 2: Add Electricity-Only Filter (5 min)                                                                                                  \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  File: src/app/api/energy-plans/sync-cdr/route.ts                                                                                             \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  After fetching all pages, before detail loop:                                                                                                \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  // Filter to electricity plans only (skip gas)                                                                                               \u9474 \
+     \uc0\u9474  const electricityPlans = allPlans.filter(plan =>                                                                                             \u9474 \
+     \uc0\u9474    plan.fuelType === 'ELECTRICITY' ||                                                                                                         \u9474 \
+     \uc0\u9474    plan.fuelType === 'DUAL'                                                                                                                   \u9474 \
+     \uc0\u9474  )                                                                                                                                            \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  sendProgress(`   Filtered to $\{electricityPlans.length\} electricity plans (removed $\{allPlans.length - electricityPlans.length\} gas plans)`) \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  // Then loop through electricityPlans instead of allPlans                                                                                    \u9474 \
+     \uc0\u9474  for (let i = 0; i < electricityPlans.length; i++) \{                                                                                          \u9474 \
+     \uc0\u9474    const plan = electricityPlans[i]                                                                                                           \u9474 \
+     \uc0\u9474    // ... rest of detail fetching                                                                                                             \u9474 \
+     \uc0\u9474  \}                                                                                                                                            \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  Benefits:                                                                                                                                    \u9474 \
+     \uc0\u9474  - \u9989  Saves ~50% of Plan Detail API calls                                                                                                      \u9474 \
+     \uc0\u9474  - \u9989  Saves ~50% database writes                                                                                                               \u9474 \
+     \uc0\u9474  - \u9989  Reduces sync time by ~50%                                                                                                                \u9474 \
+     \uc0\u9474  - \u9989  Database stays electricity-only                                                                                                          \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  Step 3: Test Local Build (10 min)                                                                                                            \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  # Clean and build                                                                                                                            \u9474 \
+     \uc0\u9474  rm -rf .next                                                                                                                                 \u9474 \
+     \uc0\u9474  npm run build                                                                                                                                \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  # If successful, test production server                                                                                                      \u9474 \
+     \uc0\u9474  npm run start                                                                                                                                \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  Verify:                                                                                                                                      \u9474 \
+     \uc0\u9474  - \u9989  Build completes                                                                                                                          \u9474 \
+     \uc0\u9474  - \u9989  No TypeScript errors                                                                                                                     \u9474 \
+     \uc0\u9474  - \u9989  Pages load                                                                                                                               \u9474 \
+     \uc0\u9474  - \u9989  APIs work                                                                                                                                \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  Step 4: Create Backup & Show Changes                                                                                                         \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  # Backup (already done, but verify latest)                                                                                                   \u9474 \
+     \uc0\u9474  ./scripts/backup-state.sh                                                                                                                    \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  # Show all changes                                                                                                                           \u9474 \
+     \uc0\u9474  git status                                                                                                                                   \u9474 \
+     \uc0\u9474  git diff                                                                                                                                     \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  Request 'cook' confirmation                                                                                                                  \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  Step 5: Commit & Deploy                                                                                                                      \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  After receiving 'cook':                                                                                                                      \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  git add .                                                                                                                                    \u9474 \
+     \uc0\u9474  git commit -m "Add CDR energy plan integration with real-time progress                                                                       \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  Features:                                                                                                                                    \u9474 \
+     \uc0\u9474  - Real-time SSE progress updates during sync                                                                                                 \u9474 \
+     \uc0\u9474  - Electricity-only filter (skip gas plans)                                                                                                   \u9474 \
+     \uc0\u9474  - Two-API approach: Generic listing + Plan detail                                                                                            \u9474 \
+     \uc0\u9474  - Admin UI: /admin/cdr-sync with live progress display                                                                                       \u9474 \
+     \uc0\u9474  - Database: Distributor and PostcodeDistributor models                                                                                       \u9474 \
+     \uc0\u9474  - Seeded: 11 distributors + 55 postcode mappings                                                                                             \u9474 \
+     \uc0\u9474  - Rate limiting: 100ms between detail calls                                                                                                  \u9474 \
+     \uc0\u9474  - Pagination: Handle 1000+ plans                                                                                                             \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  Performance:                                                                                                                                 \u9474 \
+     \uc0\u9474  - 50% fewer API calls (electricity only)                                                                                                     \u9474 \
+     \uc0\u9474  - 50% faster sync times                                                                                                                      \u9474 \
+     \uc0\u9474  - Live progress visibility                                                                                                                   \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  \u55358 \u56598  Generated with Claude Code                                                                                                                \u9474 \
+     \uc0\u9474  Co-Authored-By: Claude <noreply@anthropic.com>"                                                                                              \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  git push origin main                                                                                                                         \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  Step 6: Monitor Vercel Deployment                                                                                                            \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  Watch for:                                                                                                                                   \u9474 \
+     \uc0\u9474  - \u9989  Build succeeds                                                                                                                           \u9474 \
+     \uc0\u9474  - \u9989  Prisma generates                                                                                                                         \u9474 \
+     \uc0\u9474  - \u9989  Site deploys                                                                                                                             \u9474 \
+     \uc0\u9474  - \u9989  Admin page accessible                                                                                                                    \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  \u9201 \u65039  Timeline                                                                                                                                  \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  - SSE progress: 15 min                                                                                                                       \u9474 \
+     \uc0\u9474  - Electricity filter: 5 min                                                                                                                  \u9474 \
+     \uc0\u9474  - Local build: 10 min                                                                                                                        \u9474 \
+     \uc0\u9474  - Review & commit: 10 min                                                                                                                    \u9474 \
+     \uc0\u9474  - Deploy: 5 min                                                                                                                              \u9474 \
+     \uc0\u9474  - Total: ~45 min                                                                                                                             \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  \u9989  Success Criteria                                                                                                                           \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  - Real-time progress shows in admin UI                                                                                                       \u9474 \
+     \uc0\u9474  - Gas plans filtered (electricity only)                                                                                                      \u9474 \
+     \uc0\u9474  - Local build succeeds                                                                                                                       \u9474 \
+     \uc0\u9474  - Production deploys successfully                                                                                                            \u9474 \
+     \uc0\u9474  - Admin page works at batteryiq.com.au/admin/cdr-sync                                                                                        \u9474 \
+     \uc0\u9474  - Compare plans shows electricity data                                                                                                       \u9474 \
+     \uc0\u9474                                                                                                                                               \u9474 \
+     \uc0\u9474  Ready when Big 3 sync completes!\
+\
+\
+\
+\
+\
+\
+\
+\
+<--- Last few GCs --->\
+\
+[40674:0x128008000] 142097841 ms: Scavenge 3546.2 (3673.6) -> 3543.7 (3673.6) MB, pooled: 138 MB, 0.54 / 0.00 ms  (average mu = 0.996, current mu = 0.990) allocation failure;\
+[40674:0x128008000] 142098148 ms: Mark-Compact 4087.5 (4217.4) -> 4086.3 (4151.8) MB, pooled: 202 MB, 33.50 / 0.00 ms  (average mu = 0.986, current mu = 0.895) allocation failure; scavenge might not succeed\
+\
+\
+<--- JS stacktrace --->\
+\
+FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory\
+----- Native stack trace -----\
+\
+ 1: 0x100b5b0b8 node::OOMErrorHandler(char const*, v8::OOMDetails const&) [/usr/local/bin/node]\
+ 2: 0x100d36b70 v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/usr/local/bin/node]\
+ 3: 0x100f46298 v8::internal::Heap::stack() [/usr/local/bin/node]\
+ 4: 0x100f44638 v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags) [/usr/local/bin/node]\
+ 5: 0x100f38c20 v8::internal::HeapAllocator::AllocateRawWithLightRetrySlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment) [/usr/local/bin/node]\
+ 6: 0x100f39458 v8::internal::HeapAllocator::AllocateRawWithRetryOrFailSlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment) [/usr/local/bin/node]\
+ 7: 0x100f0a1c8 v8::internal::FactoryBase<v8::internal::Factory>::NewFixedArrayWithFiller(v8::internal::Handle<v8::internal::Map>, int, v8::internal::Handle<v8::internal::HeapObject>, v8::internal::AllocationType) [/usr/local/bin/node]\
+ 8: 0x100f2909c v8::internal::Factory::NewJSArray(v8::internal::ElementsKind, int, int, v8::internal::ArrayStorageAllocationMode, v8::internal::AllocationType) [/usr/local/bin/node]\
+ 9: 0x101346258 v8::internal::Runtime_StringSplit(int, unsigned long*, v8::internal::Isolate*) [/usr/local/bin/node]\
+10: 0x1017f9af4 Builtins_CEntry_Return1_ArgvOnStack_NoBuiltinExit [/usr/local/bin/node]\
+11: 0x1017e7300 Builtins_StringPrototypeSplit [/usr/local/bin/node]\
+12: 0x10863049c\
+13: 0x108272004\
+14: 0x10848cf68\
+15: 0x107baee90\
+16: 0x1080fa04c\
+17: 0x1080b069c\
+18: 0x1085dc660\
+19: 0x107d2f538\
+20: 0x107d73b2c\
+21: 0x107d5b6f8\
+22: 0x107d6fc10\
+23: 0x10815f464\
+24: 0x108077b04\
+25: 0x107d2fa1c\
+26: 0x107d73b2c\
+27: 0x107d5b6f8\
+28: 0x10802e6c8\
+29: 0x107799164\
+30: 0x101762c0c Builtins_JSEntryTrampoline [/usr/local/bin/node]\
+31: 0x1017628f4 Builtins_JSEntry [/usr/local/bin/node]\
+32: 0x100e9e194 v8::internal::(anonymous namespace)::Invoke(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/usr/local/bin/node]\
+33: 0x100e9daf0 v8::internal::Execution::Call(v8::internal::Isolate*, v8::internal::Handle<v8::internal::Object>, v8::internal::Handle<v8::internal::Object>, int, v8::internal::Handle<v8::internal::Object>*) [/usr/local/bin/node]\
+34: 0x100d4d0dc v8::Function::Call(v8::Local<v8::Context>, v8::Local<v8::Value>, int, v8::Local<v8::Value>*) [/usr/local/bin/node]\
+35: 0x100a59cd4 node::InternalMakeCallback(node::Environment*, v8::Local<v8::Object>, v8::Local<v8::Object>, v8::Local<v8::Function>, int, v8::Local<v8::Value>*, node::async_context, v8::Local<v8::Value>) [/usr/local/bin/node]\
+36: 0x100a70288 node::AsyncWrap::MakeCallback(v8::Local<v8::Function>, int, v8::Local<v8::Value>*) [/usr/local/bin/node]\
+37: 0x100c70b74 node::StreamBase::CallJSOnreadMethod(long, v8::Local<v8::ArrayBuffer>, unsigned long, node::StreamBase::StreamBaseJSChecks) [/usr/local/bin/node]\
+38: 0x100c72308 node::EmitToJSStreamListener::OnStreamRead(long, uv_buf_t const&) [/usr/local/bin/node]\
+39: 0x100c767e4 node::LibuvStreamWrap::OnUvRead(long, uv_buf_t const*) [/usr/local/bin/node]\
+40: 0x100c76f2c node::LibuvStreamWrap::ReadStart()::$_1::__invoke(uv_stream_s*, long, uv_buf_t const*) [/usr/local/bin/node]\
+41: 0x10174d6f4 uv__stream_io [/usr/local/bin/node]\
+42: 0x101755d1c uv__io_poll [/usr/local/bin/node]\
+43: 0x1017420cc uv_run [/usr/local/bin/node]\
+44: 0x100a5a4d4 node::SpinEventLoopInternal(node::Environment*) [/usr/local/bin/node]\
+45: 0x100ba5e30 node::NodeMainInstance::Run() [/usr/local/bin/node]\
+46: 0x100b15fc0 node::Start(int, char**) [/usr/local/bin/node]\
+47: 0x192f6ab98 start [/usr/lib/dyld]\
+zsh: abort      claude\
+danielmiddlemiss@Daniels-MacBook-Pro batteryiq %}

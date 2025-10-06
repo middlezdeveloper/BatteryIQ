@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       name: pd.distributor.name,
       state: pd.distributor.state,
       isPrimary: pd.isPrimary,
-      nmiPrefixes: JSON.parse(pd.distributor.nmiPrefixes)
+      nmiPrefixes: pd.distributor.nmiPrefixes ? JSON.parse(pd.distributor.nmiPrefixes) : []
     }))
 
     return NextResponse.json({
