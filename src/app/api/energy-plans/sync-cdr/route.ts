@@ -198,7 +198,8 @@ export async function POST(request: NextRequest) {
               sendProgress(`   ✨ No plans to update - all up to date!`)
               results.push({
                 retailer: retailer.name,
-                plans: 0
+                plans: 0,
+                isLastChunk: true  // No more work to do
               })
               continue
             }
