@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { PrismaClient, TariffType, PlanType } from '@/generated/prisma'
-import { TOP_RETAILERS, CDR_CONFIG, getRetailerEndpoint, type CDRRetailer } from '@/lib/cdr-retailers'
+import { TOP_RETAILERS, ALL_RETAILERS, CDR_CONFIG, getRetailerEndpoint, type CDRRetailer } from '@/lib/cdr-retailers'
 
 // POST /api/energy-plans/sync-cdr - Fetch real plans from CDR retailers with SSE progress
 export async function POST(request: NextRequest) {
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
         let retailersToSync: CDRRetailer[] = TOP_RETAILERS
 
         if (retailerSlug) {
-          const retailer = TOP_RETAILERS.find(r => r.slug === retailerSlug)
+          const retailer = ALL_RETAILERS.find(r => r.slug === retailerSlug)
           if (!retailer) {
             sendProgress(`❌ Error: Retailer '${retailerSlug}' not found`)
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({
@@ -49,7 +49,8 @@ export async function POST(request: NextRequest) {
           retailersToSync = TOP_RETAILERS.filter(r => r.priority === 1)
           sendProgress(`📍 Syncing Big 3 only: ${retailersToSync.map(r => r.name).join(', ')}`)
         } else {
-          sendProgress(`📍 Syncing all top ${retailersToSync.length} retailers`)
+          sendProgress(`📍 Syncing all ${ALL_RETAILERS.length} retailers`)
+          retailersToSync = ALL_RETAILERS
         }
 
         let totalPlansStored = 0
