@@ -175,6 +175,13 @@ export default function SyncStatusPage() {
                 const newPlansMatch = data.message.match(/🆕 New plans: (\d+)/)
                 if (newPlansMatch) {
                   newPlansInChunk = parseInt(newPlansMatch[1])
+                  // Update total on first chunk to set accurate progress bar
+                  if (cursor === 0) {
+                    setOverallProgress(prev => ({
+                      ...prev,
+                      total: newPlansInChunk
+                    }))
+                  }
                 }
               }
 
