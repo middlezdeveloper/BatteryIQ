@@ -1,9 +1,100 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@/generated/prisma'
-import { TOP_RETAILERS } from '@/lib/cdr-retailers'
+import { ALL_RETAILERS, CDR_CONFIG, getRetailerEndpoint, type CDRRetailer } from '@/lib/cdr-retailers'
+
+// Helper function to generate coverage report
+async function generateCoverageReport(prisma: PrismaClient) {
+  // Get DB counts
+  const totalPlansInDB = await prisma.energyPlan.count()
+  const byRetailer = await prisma.energyPlan.groupBy({
+    by: ['retailerName'],
+    _count: { id: true }
+  })
+
+  const dbCountMap = new Map(
+    byRetailer.map(r => [r.retailerName.toLowerCase(), r._count.id])
+  )
+
+  // Check each retailer
+  const retailersWithZeroPlans: { name: string; reason: string }[] = []
+  let tier1000Plus = 0
+  let tier500to999 = 0
+  let tier100to499 = 0
+  let tierUnder100 = 0
+
+  for (const retailer of ALL_RETAILERS) {
+    const dbCount = dbCountMap.get(retailer.name.toLowerCase()) || 0
+
+    if (dbCount >= 1000) tier1000Plus++
+    else if (dbCount >= 500) tier500to999++
+    else if (dbCount >= 100) tier100to499++
+    else if (dbCount >= 1) tierUnder100++
+    else {
+      // Check API to see why 0 plans
+      try {
+        const endpoint = `${getRetailerEndpoint(retailer)}&page=1`
+        const response = await fetch(endpoint, {
+          headers: CDR_CONFIG.headers,
+          signal: AbortSignal.timeout(5000)
+        })
+
+        if (!response.ok) {
+          retailersWithZeroPlans.push({
+            name: retailer.name,
+            reason: `API error ${response.status}`
+          })
+          continue
+        }
+
+        const data = await response.json()
+        const plans = data.data?.plans || []
+        const meta = data.meta || {}
+
+        if (plans.length === 0) {
+          retailersWithZeroPlans.push({
+            name: retailer.name,
+            reason: 'No plans available in API'
+          })
+        } else {
+          // Check if all plans are gas
+          const electricityPlans = plans.filter((p: any) =>
+            p.fuelType === 'ELECTRICITY' || p.fuelType === 'DUAL'
+          )
+
+          if (electricityPlans.length === 0) {
+            retailersWithZeroPlans.push({
+              name: retailer.name,
+              reason: `Gas only (${plans.length} gas plans)`
+            })
+          } else {
+            retailersWithZeroPlans.push({
+              name: retailer.name,
+              reason: `Not synced yet (${electricityPlans.length} electricity plans available)`
+            })
+          }
+        }
+      } catch (error) {
+        retailersWithZeroPlans.push({
+          name: retailer.name,
+          reason: 'API timeout or error'
+        })
+      }
+    }
+  }
+
+  return {
+    totalPlansInDB,
+    retailersWithPlans: ALL_RETAILERS.length - retailersWithZeroPlans.length,
+    retailersWithZeroPlans,
+    tier1000Plus,
+    tier500to999,
+    tier100to499,
+    tierUnder100
+  }
+}
 
 // GET /api/energy-plans/cron-sync - Automated CDR sync (called by Vercel cron)
-// Syncs TOP_RETAILERS (Big 3 + major tier 2) - the most important retailers
+// Syncs ALL_RETAILERS with comprehensive reporting
 // Uses the new parallel chunk infrastructure for fast syncing
 export async function GET(request: NextRequest) {
   const prisma = new PrismaClient()
@@ -20,14 +111,14 @@ export async function GET(request: NextRequest) {
       }, { status: 401 })
     }
 
-    console.log('🤖 Starting automated CDR sync for TOP_RETAILERS...')
-    console.log(`📊 Syncing ${TOP_RETAILERS.length} priority retailers`)
+    console.log('🤖 Starting automated CDR sync for ALL_RETAILERS...')
+    console.log(`📊 Syncing ${ALL_RETAILERS.length} retailers`)
 
     const startTime = Date.now()
 
-    // Sync all TOP_RETAILERS by calling the sync API without a specific retailer
-    // This triggers the default behavior which syncs TOP_RETAILERS
-    const syncUrl = `${request.nextUrl.origin}/api/energy-plans/sync-cdr`
+    // Sync ALL_RETAILERS by calling the sync API without a specific retailer
+    // Setting priorityOnly=false to sync all retailers
+    const syncUrl = `${request.nextUrl.origin}/api/energy-plans/sync-cdr?priorityOnly=false`
 
     console.log(`🔗 Calling sync API: ${syncUrl}`)
 
@@ -89,13 +180,40 @@ export async function GET(request: NextRequest) {
     console.log(`   Total plans processed: ${totalPlans}`)
     console.log(`   Messages logged: ${messageCount}`)
 
+    // PHASE 2: Generate comprehensive report
+    console.log('\n📊 Generating comprehensive coverage report...')
+
+    const report = await generateCoverageReport(prisma)
+
+    console.log('\n📋 SYNC REPORT:')
+    console.log('='.repeat(80))
+    console.log(`Database Total: ${report.totalPlansInDB} plans`)
+    console.log(`Retailers with plans: ${report.retailersWithPlans}/${ALL_RETAILERS.length}`)
+    console.log(`Retailers with 0 plans: ${report.retailersWithZeroPlans.length}`)
+    console.log('='.repeat(80))
+
+    if (report.retailersWithZeroPlans.length > 0) {
+      console.log('\n⚠️  Retailers with 0 plans:')
+      report.retailersWithZeroPlans.forEach(r => {
+        console.log(`   - ${r.name}: ${r.reason}`)
+      })
+    }
+
+    console.log(`\n📈 Coverage by tier:`)
+    console.log(`   1000+ plans: ${report.tier1000Plus} retailers`)
+    console.log(`   500-999 plans: ${report.tier500to999} retailers`)
+    console.log(`   100-499 plans: ${report.tier100to499} retailers`)
+    console.log(`   1-99 plans: ${report.tierUnder100} retailers`)
+    console.log(`   0 plans: ${report.retailersWithZeroPlans.length} retailers`)
+
     return NextResponse.json({
       success: true,
       duration,
       totalPlans,
       retailers: lastResult?.retailers || [],
       timestamp: new Date().toISOString(),
-      messagesLogged: messageCount
+      messagesLogged: messageCount,
+      report
     })
 
   } catch (error) {
